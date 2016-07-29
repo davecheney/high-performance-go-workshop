@@ -25,26 +25,6 @@ Today I am going to cover five main areas:
 
 * What does performance mean, what is possible?
 
-* Mechanical Sympathy
-
-.background images/395980-jackie-stewart.jpg
-
-# Who's this ?
-
-* Mechanical Sympathy
-
-Jackie Stewart, 3 times world Formula 1 champion. 
-
-# Stewart was also a staunch advocate for driver safety, in an era when formula one was a lot faster and a lot more dangerous than it is today.
-
-Stewart recognised that the best drivers had enough understanding of how a machine worked so they could work in harmony with it.
-
-He called this _Mechanical_Sympathy_.
-
-# Now I stole this line from Bill Kennedy, who probably stole it from Mike Acton, who might have stolen it from Martin Thompson.
-# The point is not the prevelence of Mechanical Sympathy, but the idea that to write high performance code, you have to understand the hardware your programs will run on.
- to describe the  He believed the best drivers had enough understanding of how a machine worked so they could work in harmony with it.
-
 * What does performance mean?
 
 What do we mean when we say performance?
@@ -69,37 +49,37 @@ But this is all changing.
 
 * The CPU
 
-.image writing-high-performance-go/cpu.svg _ 700
+.image images/cpu.svg _ 700
 
 Clock speeds have not increased in a decade.
 
 * More cores
 
-.image writing-high-performance-go/Nehalem_Die_Shot_3.jpg _ 600
+.image images/Nehalem_Die_Shot_3.jpg _ 600
 
 Over the last decade performance, especially on the server, has been dictated by adding more CPU cores.
+
+* Transitor size reductions have run out of steam
+
+.image images/Mjc5MTM2Nw.png _ 580
+
+Shrinking the size of a transitor, to fit more in the same sized die, is hitting a wall.
+
+The die can be made larger, but that increases latency.
 
 * Memory
 
 Physical memory attached to a server has increased geometrically.
 
-.image writing-high-performance-go/latency.png _ 600
+.image images/latency.png _ 600
 
 But, in terms of processor cycles lost, physical memory is still as far away as ever.
 
-# memory is physically distant from the CPU.
-
 * Cache rules everything around it
 
-TODO IMAGE OF HASWELL RING ARCHITECTURE
+.image images/xeon_e5_v4_hcc_rings.jpg _ 600
 
 Cache rules everything around it, but it is small, and will remain small because the speed of light determines how large a cache can been at a certain latency.
-
-We already have three caches:
-
-- *L1*, per CPU core, 32/32 kilobytes, 2–4 cycle latency
-- *L2*, per set of cores, 256 kilobytes, 7–10 cycle latency
-- *L3*, per CPU package, 4–32 megabytes, 40–60 cycle latency
 
 You can have a larger cache, but it will be slower because, in a universe where electricity travels a foot every nano second, distance equals latency.
 
@@ -107,7 +87,20 @@ You can have a larger cache, but it will be slower because, in a universe where 
 
 Network and disk I/O are still expensive, so expensive that the Go runtime will schedule something else while those operations are in progress.
 
-.image writing-high-performance-go/numbers.png _ 600
+    L1 cache reference                           0.5 ns
+    Branch mispredict                            5   ns
+    L2 cache reference                           7   ns                      14x L1 cache
+    Mutex lock/unlock                           25   ns
+    Main memory reference                      100   ns                      20x L2 cache, 200x L1 cache
+    Compress 1K bytes with Zippy             3,000   ns        3 us
+    Send 1K bytes over 1 Gbps network       10,000   ns       10 us
+    Read 4K randomly from SSD*             150,000   ns      150 us          ~1GB/sec SSD
+    Read 1 MB sequentially from memory     250,000   ns      250 us
+    Round trip within same datacenter      500,000   ns      500 us
+    Read 1 MB sequentially from SSD*     1,000,000   ns    1,000 us    1 ms  ~1GB/sec SSD, 4X memory
+    Disk seek                           10,000,000   ns   10,000 us   10 ms  20x datacenter roundtrip
+    Read 1 MB sequentially from disk    20,000,000   ns   20,000 us   20 ms  80x memory, 20X SSD
+    Send packet CA->Netherlands->CA    150,000,000   ns  150,000 us  150 ms
 
 * The free lunch is over
 
@@ -119,7 +112,7 @@ Now, a decade later, there is no doubt that Herb Sutter was right. Memory is slo
 
 * A fast programming language
 
-So, it's time, for the software to come to the party.
+It's time, for the software to come to the party.
 
 As [[https://www.youtube.com/watch?v=aiv1JOfMjm0][Rick Hudson noted at GopherCon]] in 2015, it's time for a programming language that works _with_ the limitations of today's hardware, rather than continue to ignore the reality that CPU designers find themselves.
 
@@ -132,27 +125,38 @@ So, for best performance on today's hardware in today's world, you need a progra
 
 Obviously the language I'm talking about is the one we're here to discuss: Go.
 
-* SECTION CONCLUSION
+* Discussion
 
-DISCUSS - is hardware getting faster ?
-
-* Benchmarking
+Are computers still getting faster ?
 
 * Benchmarking
 
-Now that we discussed what profiling is, and how to use `pprof`, we're going to look at writing benchmarks and interpreting their results.
+* Benchmarking
 
 This section focuses on how to construct useful benchmarks using the Go testing framework, and gives practical tips for avoiding the pitfalls.
 
 We'll also touch on how to profile a complete application using the [[https://github.com/pkg/profile][github.com/pkg/profile]] package.
 
+* Benchmarking ground rules
+
+Before you benchmark, you must have a stable environment to get repeatable results.
+
+- The machine must be idle—don't profile on shared hardware, don't browse the web while waiting for a long benchmark to run.
+- Watch out for power saving and thermal scaling.
+- Avoid virtual machines and shared cloud hosting; they are too noisy for consistent measurements.
+- There is a kernel bug on OS X versions less than El Capitan; upgrade or avoid profiling on OS X.
+
+If you can afford it, buy dedicate performance test hardware. Rack them, disable all the power management and thermal scaling and never update the software on those machines.
+
+For everyone else, have a before and after sample and run them multiple times to get consistent results.
+
 * Using the testing package for benchmarking
 
-fib.go:
 .code examples/fib/fib_test.go /STARTFIB OMIT/,/ENDFIB OMIT/
+.caption examples/fib/fib.go
 
-fib_test.go:
 .code examples/fib/fib_test.go /STARTBENCH OMIT/,/ENDBENCH OMIT/
+.caption examples/fib/fib_test.go
 
 DEMO: `go`test`-bench=.`
 
@@ -218,10 +222,7 @@ _Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks.
 
 Profiling `testing` benchmarks is useful for _microbenchmarks_.
 
-We use microbenchmarks inside the standard library to make sure 
-
-
- but what if you want to profile a complete application?
+We use microbenchmarks inside the standard library to make sure individual packages do not regress, but what if you want to profile a complete application?
 
 As I mentioned in the previous section, to profile an application, you must use the `runtime/pprof` package, but that is fiddly and low level.
 
@@ -259,19 +260,6 @@ Before you can begin to tune your application, you must first know how to tell i
 You must first establish a reliable baseline to measure the impact of your change.
 
 In other words, _"Don't_guess,_measure"_
-
-* Profiling basics
-
-Before you profile, you must have a stable environment to get repeatable results.
-
-- The machine must be idle—don't profile on shared hardware, don't browse the web while waiting for a long benchmark to run.
-- Watch out for power saving and thermal scaling.
-- Avoid virtual machines and shared cloud hosting; they are too noisy for consistent measurements.
-- There is a kernel bug on OS X versions less than El Capitan; upgrade or avoid profiling on OS X.
-
-If you can afford it, buy dedicate performance test hardware. Rack them, disable all the power management and thermal scaling and never update the software on those machines.
-
-For everyone else, have a before and after sample and run them multiple times to get consistent results.
 
 * pprof
 
