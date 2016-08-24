@@ -102,6 +102,8 @@ Network and disk I/O are still expensive, so expensive that the Go runtime will 
     Read 1 MB sequentially from disk    20,000,000   ns   20,000 us   20 ms  80x memory, 20X SSD
     Send packet CA->Netherlands->CA    150,000,000   ns  150,000 us  150 ms
 
+.image images/media-20160803.jpg
+
 * The free lunch is over
 
 In 2005 Herb Sutter, the C++ committee leader, wrote an article entitled [[http://www.gotw.ca/publications/concurrency-ddj.htm][_The_free_lunch_is_over_]].
