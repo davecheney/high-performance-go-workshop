@@ -1,6 +1,4 @@
 High Performance Go
-Workshop
-17 Aug 2016
 
 Dave Cheney
 dave@cheney.net
@@ -11,11 +9,21 @@ http://dave.cheney.net/
 
 THIS IS A DRAFT PRESENTATION
 
+* License and Materials
+
+This presentation is licensed under the [[https://creativecommons.org/licenses/by-sa/4.0/][Creative Commons Attribution-ShareAlike 4.0 International]] licence.
+
+The materials for this presentation are available on GitHub:
+
+.link https://github.com/davecheney/high-performance-go-workshop
+
+You are encouraged to remix, transform, or build upon the material, providing you give appropraite credit and distribute your contributions under the same license.
+
 * Agenda
 
 This workshop is aimed at development teams who are building production Go applications intended for high scale deployment.
 
-Today I am going to cover five main areas:
+Today we will going to cover five areas:
 
 - What does performance mean, what is possible?
 - Benchmarking
@@ -23,15 +31,15 @@ Today I am going to cover five main areas:
 - Memory management and GC tuning
 - Concurrency
 
+After each section we'll have time for questions.
+
 * What does performance mean, what is possible?
 
 * What does performance mean?
 
-What do we mean when we say performance?
+What do we mean when we say high performance?
 
-How do we know when we are fast?
-
-Before we start to talk about writing high performance code, we must establish an understanding of the current trends in computing hardware and outline the issues facing high scale software development.
+Before we start to talk about writing high performance code, we should establish an understanding of the current trends in computing hardware and outline the issues facing high perofrmance software development.
 
 From these factors we can understand the areas where application performance can be won or lost.
 
@@ -39,25 +47,29 @@ From these factors we can understand the areas where application performance can
 
 Before we talk about writing high performance code, we need to talk about the hardware that will execute this code.
 
-What are its properties, how have they changed over time?
+What are its properties and how have they changed over time?
 
 As software authors we have benefited from Moore's Law, the doubling of the number of available transistors on a chip every 18 months, for 50 years.
 
-No other industry has experienced a 4, sometimes 5, order of magnitude improvement in their tools in the space of a lifetime.
+No other industry has experienced a _seven_ orders of magnitude improvement in their tools in the space of a lifetime.
 
 But this is all changing.
 
 * The CPU
 
-.image images/cpu.svg _ 700
+.image images/cpu.svg _ 600
 
 Clock speeds have not increased in a decade.
+
+Transisters have stopped decreasing in price.
 
 * More cores
 
 .image images/Nehalem_Die_Shot_3.jpg _ 600
 
 Over the last decade performance, especially on the server, has been dictated by adding more CPU cores.
+
+CPU core count is dominated by heat dispation and cost.
 
 * Transitor size reductions have run out of steam
 
@@ -66,6 +78,25 @@ Over the last decade performance, especially on the server, has been dictated by
 Shrinking the size of a transitor, to fit more in the same sized die, is hitting a wall.
 
 The die can be made larger, but that increases latency.
+
+* Modern CPUs are optimised for bulk transfers
+
+"Modern processors are a like nitro fuled funny cars, they excel at the quarter mile. Unfortunately modern programming languages are like Monte Carlo, they are full of twists and turns."
+.caption David Ungar, OOPSLA (year unknown)
+
+# https://youtu.be/4LG-RtcSYUQ?t=39m59s
+
+Much of the improvement in performance in the last two decades has come from architectural improvements
+
+- out of order execution
+- speculative execution
+- vector (SSE) instructions
+
+Thus, modern CPUs are optimised for bulk transfers and bulk operations.
+
+At almost every level, the setup cost of an operation encourages you to work in bulk.
+
+eg. memory is not loaded per byte, but per multiple of cache lines, this is why alignment is becoming less of an issue. 
 
 * Memory
 
@@ -87,34 +118,19 @@ You can have a larger cache, but it will be slower because, in a universe where 
 
 Network and disk I/O are still expensive, so expensive that the Go runtime will schedule something else while those operations are in progress.
 
-    L1 cache reference                           0.5 ns
-    Branch mispredict                            5   ns
-    L2 cache reference                           7   ns                      14x L1 cache
-    Mutex lock/unlock                           25   ns
-    Main memory reference                      100   ns                      20x L2 cache, 200x L1 cache
-    Compress 1K bytes with Zippy             3,000   ns        3 us
-    Send 1K bytes over 1 Gbps network       10,000   ns       10 us
-    Read 4K randomly from SSD*             150,000   ns      150 us          ~1GB/sec SSD
-    Read 1 MB sequentially from memory     250,000   ns      250 us
-    Round trip within same datacenter      500,000   ns      500 us
-    Read 1 MB sequentially from SSD*     1,000,000   ns    1,000 us    1 ms  ~1GB/sec SSD, 4X memory
-    Disk seek                           10,000,000   ns   10,000 us   10 ms  20x datacenter roundtrip
-    Read 1 MB sequentially from disk    20,000,000   ns   20,000 us   20 ms  80x memory, 20X SSD
-    Send packet CA->Netherlands->CA    150,000,000   ns  150,000 us  150 ms
-
 .image images/media-20160803.jpg
 
 * The free lunch is over
 
 In 2005 Herb Sutter, the C++ committee leader, wrote an article entitled [[http://www.gotw.ca/publications/concurrency-ddj.htm][_The_free_lunch_is_over_]].
 
-In the articled Sutter discussed all the points I covered and drew the attention of programmers that they could no longer rely on faster hardware to fix slow programs—or slow programming languages.
+In the articled Sutter discussed all the points I covered and asserted that programmers could no longer rely on faster hardware to fix slow programs—or slow programming languages.
 
 Now, a decade later, there is no doubt that Herb Sutter was right. Memory is slow, caches are too small, CPU clock speeds are going backwards, and the simple world of a single threaded CPU is long gone.
 
 * A fast programming language
 
-It's time, for the software to come to the party.
+It's time for the software to come to the party.
 
 As [[https://www.youtube.com/watch?v=aiv1JOfMjm0][Rick Hudson noted at GopherCon]] in 2015, it's time for a programming language that works _with_ the limitations of today's hardware, rather than continue to ignore the reality that CPU designers find themselves.
 
@@ -129,7 +145,9 @@ Obviously the language I'm talking about is the one we're here to discuss: Go.
 
 * Discussion
 
-Are computers still getting faster ?
+- Do you agree that computers are no longer getting faster?
+
+- Do you think we need to change languages to take advantage of modern hardware?
 
 * Benchmarking
 
@@ -445,6 +463,12 @@ The design of the Go GC has changed over the years
 
 # TODO CHECK THESE DATES AND VERSIONS
 
+* Garbage collected language world view
+
+Point out that this is how gc designers think, you can disagree with it, or argue that it's limited, but you won't change their mind. This is the base assumption. 
+
+Include McCarthy quote about infinite free store.
+
 A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
 
 The Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
@@ -722,7 +746,15 @@ Do not call out to C code in the middle of a tight loop.
 
 cgo calls are similar to blocking IO, they consume a thread during operation.
 
+* Avoid CGO
+
+cgo has a high overhead
+
 For best performance I recommend avoiding cgo in your applications.
+
+if you're using cgo to call a very short cgo function, where the overhead is the most noticable, rewrite that code in go -- by definition it's short.
+
+If the cgo code takes a long time, cgo overhead is not as important.
 
 .link http://dave.cheney.net/2016/01/18/cgo-is-not-go Further reading: cgo is not Go.
 
