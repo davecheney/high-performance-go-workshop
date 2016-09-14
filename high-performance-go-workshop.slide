@@ -153,9 +153,15 @@ Obviously the language I'm talking about is the one we're here to discuss: Go.
 
 * Benchmarking
 
+Before you can begin to tune your application, you must first know how to tell if your changes are making things better, or worse.
+
+You must first establish a reliable baseline to measure the impact of your change.
+
+In other words, _"Don't_guess,_measure"_
+
 This section focuses on how to construct useful benchmarks using the Go testing framework, and gives practical tips for avoiding the pitfalls.
 
-We'll also touch on how to profile a complete application using the [[https://github.com/pkg/profile][github.com/pkg/profile]] package.
+Benchmarking is closely related to profiling, which we'll touch on during this section, then cover it in detail in the next.
 
 * Benchmarking ground rules
 
@@ -166,7 +172,7 @@ Before you benchmark, you must have a stable environment to get repeatable resul
 - Avoid virtual machines and shared cloud hosting; they are too noisy for consistent measurements.
 - There is a kernel bug on OS X versions less than El Capitan; upgrade or avoid profiling on OS X.
 
-If you can afford it, buy dedicate performance test hardware. Rack them, disable all the power management and thermal scaling and never update the software on those machines.
+If you can afford it, buy dedicated performance test hardware. Rack it, disable all the power management and thermal scaling and never update the software on those machines.
 
 For everyone else, have a before and after sample and run them multiple times to get consistent results.
 
@@ -223,63 +229,22 @@ This is only going to get more common as the Go compiler improves.
 
 DEMO: show how to fix popcnt
 
-* Profiling benchmarks
+* Benchmark mistakes
 
-The `testing` package has built in support for generating CPU, memory, and block profiles.
+- TODO don't scale by b.N
+- benchmarking expensive setup
 
-- `-cpuprofile=$FILE` writes a CPU profile to `$FILE`. 
-- `-memprofile=$FILE`, writes a memory profile to `$FILE`, `-memprofilerate=N` adjusts the profile rate to `1/N`.
-- `-blockprofile=$FILE`, writes a block profile to `$FILE`.
+* Discussion
 
-Using any of these flags also preserves the binary.
-
-    % go test -run=XXX -bench=. -cpuprofile=c.p bytes
-    % go tool pprof bytes.test c.p
-
-_Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks.
-
-* Profiling applications
-
-Profiling `testing` benchmarks is useful for _microbenchmarks_.
-
-We use microbenchmarks inside the standard library to make sure individual packages do not regress, but what if you want to profile a complete application?
-
-As I mentioned in the previous section, to profile an application, you must use the `runtime/pprof` package, but that is fiddly and low level.
-
-To make this easier, a few years ago I wrote a small package, [[https://github.com/pkg/profile][github.com/pkg/profile]], to make it easier to profile an application.
-
-     import "github.com/pkg/profile
-
-     func main() {
-           defer profile.Start().Stop()
-           ...
-     }
-
-DEMO: Show profiling `cmd/godoc` with `pkg/profile`
-
-* Memory management and GC tuning
-
-* Memory management and GC tuning
-
-As a garbage collected language, the performance of Go programs is often determined by their interaction with the garbage collector.
-
-Next to your choice of algorithms, memory consumption is the most important factor that determines the performance and scalability of your application.
-
-This section discusses the operation of the garbage collector, how to measure the memory usage of your program and strategies for lowering memory usage if garbage collector performance is a bottleneck.
+- TODO
 
 * Performance measurement and profiling
- 
+
 * Performance measurement and profiling
 
-There is a common saying in Australia, I'm sure there is a Chinese version.
+TODO INTRODUCTION
 
-_"Measure_twice,_cut_once"_
-
-Before you can begin to tune your application, you must first know how to tell if your changes are making things better, or worse.
-
-You must first establish a reliable baseline to measure the impact of your change.
-
-In other words, _"Don't_guess,_measure"_
+In the previous section
 
 * pprof
 
@@ -287,11 +252,14 @@ The primary tool we're going to be talking about today is _pprof_.
 
 pprof descends from the Google Perf Tools suite of tools.
 
-pprof profiling is built into the Go runtime.
+`pprof` profiling is built into the Go runtime.
 
-pprof supports several types of profiling.
+It comes in two parts:
 
-We'll discuss three of these today: 
+- `runtime/pprof` package built into every Go program
+- `go`tool`pprof` for investigating profiles.
+
+pprof supports several types of profiling, we'll discuss three of these today: 
 
 - CPU profiling.
 - Memory profiling.
@@ -403,7 +371,7 @@ A better way to understand your profile is to visualise it.
 
 Opens a web page with a graphical display of the profile.
 
-.link writing-high-performance-go/profile.svg 
+.link images/profile.svg 
 
 I find this method to be superior to the text mode, I strongly recommend you try it.
 
@@ -422,8 +390,8 @@ Here is a visualisation of a memory profile:
     % go tool pprof --alloc_objects -svg $(go tool -n compile) /tmp/m.p > alloc_objects.svg
     % go tool pprof --inuse_objects -svg $(go tool -n compile) /tmp/m.p > alloc_objects.svg
 
-.link writing-high-performance-go/alloc_objects.svg
-.link writing-high-performance-go/inuse_objects.svg
+.link images/alloc_objects.svg
+.link images/inuse_objects.svg
 
 TODO: DESCRIBE THE DIFFERENCE BETWEEN INUSE AND ALLOC
 
@@ -432,7 +400,7 @@ Here is a visulaisation of a block profile:
     % go test -run=XXX -bench=ClientServer -blockprofile=/tmp/b.p net/http
     % go tool pprof -svg http.test /tmp/b.p > block.svg
 
-.link writing-high-performance-go/block.svg 
+.link images/block.svg 
 
 * How pprof works
 
@@ -442,17 +410,114 @@ The Go runtime's profiling interface is in the `runtime/pprof` package.
 
 To make it easier to profile your code you should use a higher level interface.
 
-For profiling `testing` package benchmarks, the `go`test` command has integrated support for profiling the code under test:
+* Profiling benchmarks
 
-    go test -run=XXX -bench=. -cpuprofile=/tmp/c.p
+The `testing` package has built in support for generating CPU, memory, and block profiles.
 
-For profiling an application, I recommend the [[https://github.com/pkg/profile][github.com/pkg/profile]] package.
+- `-cpuprofile=$FILE` writes a CPU profile to `$FILE`. 
+- `-memprofile=$FILE`, writes a memory profile to `$FILE`, `-memprofilerate=N` adjusts the profile rate to `1/N`.
+- `-blockprofile=$FILE`, writes a block profile to `$FILE`.
 
-We'll look at both of these in more detail in the next section.
+Using any of these flags also preserves the binary.
+
+    % go test -run=XXX -bench=. -cpuprofile=c.p bytes
+    % go tool pprof bytes.test c.p
+
+_Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks.
+
+* Profiling applications
+
+Profiling `testing` benchmarks is useful for _microbenchmarks_.
+
+We use microbenchmarks inside the standard library to make sure individual packages do not regress, but what if you want to profile a complete application?
+
+As I mentioned in the previous section, to profile an application, you must use the `runtime/pprof` package, but that is fiddly and low level.
+
+To make this easier, a few years ago I wrote a small package, [[https://github.com/pkg/profile][github.com/pkg/profile]], to make it easier to profile an application.
+
+     import "github.com/pkg/profile
+
+     func main() {
+           defer profile.Start().Stop()
+           ...
+     }
+
+DEMO: Show profiling `cmd/godoc` with `pkg/profile`
+
+* Framepointers
+
+.image seven/good-news.jpg
+
+Go 1.7 has been released and along with a new compiler for amd64, the compiler now enables frame pointers by default.
+
+The frame pointer is a register that always points to the top of the current stack frame.
+
+Framepointers enable tools like `gdb(1)`, and `perf(1)` to understand the Go call stack.
+
+* perf
+
+If you're a linux user, then `perf(1)` is a great tool for profiling applications. Now we have frame pointers, `perf` can profile Go applications.
+
+        % go build -toolexec="perf stat" cmd/compile/internal/gc
+        # cmd/compile/internal/gc
+
+         Performance counter stats for '/home/dfc/go/pkg/tool/linux_amd64/compile -o $WORK/cmd/compile/internal/gc.a -trimpath $WORK -p cmd/compile/internal/gc -complete -buildid 87cd803267511b4d9e753d68b5b66a70e2f878c4 -D _/home/dfc/go/src/cmd/compile/internal/gc -I $WORK -pack ./alg.go ./align.go ./bexport.go ./bimport.go ./builtin.go ./bv.go ./cgen.go ./closure.go ./const.go ./cplx.go ./dcl.go ./esc.go ./export.go ./fmt.go ./gen.go ./go.go ./gsubr.go ./init.go ./inl.go ./lex.go ./magic.go ./main.go ./mpfloat.go ./mpint.go ./obj.go ./opnames.go ./order.go ./parser.go ./pgen.go ./plive.go ./popt.go ./racewalk.go ./range.go ./reflect.go ./reg.go ./select.go ./sinit.go ./sparselocatephifunctions.go ./ssa.go ./subr.go ./swt.go ./syntax.go ./type.go ./typecheck.go ./universe.go ./unsafe.go ./util.go ./walk.go':
+
+               7026.140760 task-clock (msec)         #    1.283 CPUs utilized
+                     1,665 context-switches          #    0.237 K/sec
+                        39 cpu-migrations            #    0.006 K/sec
+                    77,362 page-faults               #    0.011 M/sec
+            21,769,537,949 cycles                    #    3.098 GHz                     [83.41%]
+            11,671,235,864 stalled-cycles-frontend   #   53.61% frontend cycles idle    [83.31%]
+             6,839,727,058 stalled-cycles-backend    #   31.42% backend  cycles idle    [66.65%]
+            27,157,950,447 instructions              #    1.25  insns per cycle
+                                                     #    0.43  stalled cycles per insn [83.25%]
+             5,351,057,260 branches                  #  761.593 M/sec                   [83.49%]
+               118,150,150 branch-misses             #    2.21% of all branches         [83.15%]
+
+               5.476816754 seconds time elapsed
+
+* perf record
+
+        % go build -toolexec="perf record -g -o /tmp/p" cmd/compile/internal/gc
+        % perf report -i /tmp/p
+
+.image images/perf.png _ 800
+
+* Flame graphs
+
+.image images/cpu-mysql-updated.svg _ 500
+
+"The x-axis shows the stack profile population, sorted alphabetically (it is not the passage of time), and the y-axis shows stack depth. Each rectangle represents a stack frame. The wider a frame is is, the more often it was present in the stacks. The top edge shows what is on-CPU, and beneath it is its ancestry. The colors are usually not significant, picked randomly to differentiate frames."
+.caption http://www.brendangregg.com/flamegraphs.html
+
+* Flame graphs (cont.)
+
+Flame graphs can consume data from many sources, including `pprof` (and `perf(1)`).
+
+Uber have open sourced a tool call go-torch which automates the process, assuming you have the `/debug/pprof` endpoint, or you can feed it an existing profile.
+
+.link https://github.com/uber/go-torch
+
+* Discussion
+
+TODO 
+
+* Memory management and GC tuning
+
+* Memory management and GC tuning
+
+Go is a garbage collected language. This is a design principle, it will not change.
+
+As a garbage collected language, the performance of Go programs is often determined by their interaction with the garbage collector.
+
+The Go GC favors lower latency over maximum throughput; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
+
+Next to your choice of algorithms, memory consumption is the most important factor that determines the performance and scalability of your application.
+
+This section discusses the operation of the garbage collector, how to measure the memory usage of your program and strategies for lowering memory usage if garbage collector performance is a bottleneck.
 
 * Garbage collector design
-
-Go is a garbage collected language. This is a design principal, it will not change.
 
 The design of the Go GC has changed over the years
 
@@ -460,14 +525,20 @@ The design of the Go GC has changed over the years
 - Go 1.3, fully precise collector, wouldn't mistake big numbers on the heap for pointers.
 - Go 1.5, new GC design, focusing on _latency_ over _throughput_.
 - Go 1.6, GC improvements, handling larger heaps with lower latency.
+- Go 1.7, small GC improvements, mainly refactoring.
+- Go 1.8, ROC collector 
+
+# TODO DESCRIBE ROC collector
 
 # TODO CHECK THESE DATES AND VERSIONS
 
-* Garbage collected language world view
+* Garbage collector world view
 
-Point out that this is how gc designers think, you can disagree with it, or argue that it's limited, but you won't change their mind. This is the base assumption. 
+The purpose of a garbage collector is to present the illusion that there is an infinite amount of memory.
 
-Include McCarthy quote about infinite free store.
+You may disagree with this statement, but this is the base assumption of how garbage collector designers think.
+
+# Include McCarthy quote about infinite free store.
 
 A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
 
@@ -526,7 +597,7 @@ For example, if we currently have a 256mb heap, and `GOGC=100` (the default), wh
 - Values of `GOGC` greater than 100 causes the heap to grow faster, reducing the pressure on the GC.
 - Values of `GOGC` less than 100 cause the heap to grow slowly, increasing the pressure on the GC.
 
-The default value of 100 is only a guide, you should choose your own value _after_profiling_your_application_with_production_loads_.
+The default value of 100 is _just a guide_. you should choose your own value _after_profiling_your_application_with_production_loads_.
 
 * Reduce allocations
 
@@ -579,26 +650,30 @@ This will avoid the conversion of the byte slice to a string for the map lookup.
 #
 # TODO show benchmarking of allocations.
 
-* Use bytes.Buffer to build strings
+* Avoid string concatenation
 
 Go strings are immutable. Concatenating two strings generates a third.
 
-Avoid string concatenation, prefer instead writing to a temporary `bytes.Buffer`.
+Avoid string concatenation by appending into a `[]byte` buffer.
 
 _Before:_
 
     s := request.ID
-    s += client.Address().String()
-    s += time.Now().String()
+    s += " " + client.Address().String()
+    s += " " + time.Now().String()
     return s
 
 _After:_
 
-    var b bytes.Buffer
-    fmt.Fprintf(&b, "%s %v %v", request.ID, client.Address(), time.Now())
-    return b.String()
+    b := make([]byte, 0, 40) // guess
+    b = append(b, request.ID...)
+    b = append(b, ' ')
+    b = append(b, addr.String()...)
+    b = append(b, ' ')
+    b = time.Now().AppendFormat(b, "2006-01-02 15:04:05.999999999 -0700 MST")
+    return string(b)
 
-This might look like more work for the CPU, but this is work _local_ to one specific goroutine. Generating garbage slows the whole program.
+DEMO: `go`test`-bench=.`./concat`
 
 * Preallocate slices if the length is known
 
@@ -675,7 +750,7 @@ However, each goroutine does consume a minimum amount of memory for the goroutin
 
 Goroutines are cheap to start and cheap to run, but they do have a finite cost in terms of memory footprint; you cannot create an infinite number of them.
 
-Every time you use the `go` keyword in your program to launch a goroutine, you must know how and when that goroutine will exit.
+Every time you use the `go` keyword in your program to launch a goroutine, you must *know* how, and when, that goroutine will exit.
 
 If you don't know the answer, that's a potential memory leak.
 
