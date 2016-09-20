@@ -33,13 +33,19 @@ Today we will going to cover five areas:
 
 After each section we'll have time for questions.
 
+* One more thing ...
+
+This isn't a lecture, it's a conversation.
+
+If you don't understand something, or don't think what you're hearing is correct, speak up.
+
 * What does performance mean, what is possible?
 
 * What does performance mean?
 
 What do we mean when we say high performance?
 
-Before we start to talk about writing high performance code, we should establish an understanding of the current trends in computing hardware and outline the issues facing high perofrmance software development.
+Before we start to talk about writing high performance code, we should establish an understanding of the current trends in computing hardware and outline the issues facing high performance software development.
 
 From these factors we can understand the areas where application performance can be won or lost.
 
@@ -51,7 +57,7 @@ What are its properties and how have they changed over time?
 
 As software authors we have benefited from Moore's Law, the doubling of the number of available transistors on a chip every 18 months, for 50 years.
 
-No other industry has experienced a _seven_ orders of magnitude improvement in their tools in the space of a lifetime.
+No other industry has experienced a _six order of magnitude improvement in their tools in the space of a lifetime.
 
 But this is all changing.
 
@@ -61,7 +67,7 @@ But this is all changing.
 
 Clock speeds have not increased in a decade.
 
-Transisters have stopped decreasing in price.
+The number of transisters per dollar has started to fall.
 
 * More cores
 
@@ -77,7 +83,7 @@ CPU core count is dominated by heat dispation and cost.
 
 Shrinking the size of a transitor, to fit more in the same sized die, is hitting a wall.
 
-The die can be made larger, but that increases latency.
+CPU dies can be made larger, but that increases latency, and cost per transister.
 
 * Modern CPUs are optimised for bulk transfers
 
@@ -86,15 +92,13 @@ The die can be made larger, but that increases latency.
 
 # https://youtu.be/4LG-RtcSYUQ?t=39m59s
 
-Much of the improvement in performance in the last two decades has come from architectural improvements
+Much of the improvement in performance in the last two decades has come from architectural improvements:
 
 - out of order execution
 - speculative execution
 - vector (SSE) instructions
 
-Thus, modern CPUs are optimised for bulk transfers and bulk operations.
-
-At almost every level, the setup cost of an operation encourages you to work in bulk.
+Thus, modern CPUs are optimised for bulk transfers and bulk operations. At every level, the setup cost of an operation encourages you to work in bulk.
 
 eg. memory is not loaded per byte, but per multiple of cache lines, this is why alignment is becoming less of an issue. 
 
@@ -110,7 +114,7 @@ But, in terms of processor cycles lost, physical memory is still as far away as 
 
 .image images/xeon_e5_v4_hcc_rings.jpg _ 600
 
-Cache rules everything around it, but it is small, and will remain small because the speed of light determines how large a cache can been at a certain latency.
+Cache rules everything around it, but it is small, and will remain small because the speed of light determines how large a cache can for a certain latency.
 
 You can have a larger cache, but it will be slower because, in a universe where electricity travels a foot every nano second, distance equals latency.
 
@@ -124,7 +128,7 @@ Network and disk I/O are still expensive, so expensive that the Go runtime will 
 
 In 2005 Herb Sutter, the C++ committee leader, wrote an article entitled [[http://www.gotw.ca/publications/concurrency-ddj.htm][_The_free_lunch_is_over_]].
 
-In the articled Sutter discussed all the points I covered and asserted that programmers could no longer rely on faster hardware to fix slow programs—or slow programming languages.
+In his article Sutter discussed all the points I covered and asserted that programmers could no longer rely on faster hardware to fix slow programs—or slow programming languages.
 
 Now, a decade later, there is no doubt that Herb Sutter was right. Memory is slow, caches are too small, CPU clock speeds are going backwards, and the simple world of a single threaded CPU is long gone.
 
@@ -234,9 +238,23 @@ DEMO: show how to fix popcnt
 - TODO don't scale by b.N
 - benchmarking expensive setup
 
-* Discussion
+* Compiler flags
 
-- TODO
+* Compiler flags (cont.)
+
+Showing the assembly output of a package:
+
+* TODO DISCUSS ESCAPE ANALYSIS
+
+* TODO DISCUSS INLINING
+
+* TODO DISCUSS CACHE LINES, FALSE SHARING, AND DATA LOCALITY VS GLOBAL STATE
+
+* Exercises
+
+- `-S` prints the (Go flavoured) assembly of a function
+- `-l` controls the behaviour of the inliner, `-l` disables inlining, `-l -l` increases it. Experiment with the difference.
+- `-m` controls printing of optimisation decision like inlining, escape analysis.
 
 * Performance measurement and profiling
 
@@ -446,8 +464,6 @@ DEMO: Show profiling `cmd/godoc` with `pkg/profile`
 
 * Framepointers
 
-.image seven/good-news.jpg
-
 Go 1.7 has been released and along with a new compiler for amd64, the compiler now enables frame pointers by default.
 
 The frame pointer is a register that always points to the top of the current stack frame.
@@ -499,9 +515,62 @@ Uber have open sourced a tool call go-torch which automates the process, assumin
 
 .link https://github.com/uber/go-torch
 
-* Discussion
+DEMO
 
-TODO 
+        % go build -gcflags=-cpuprofile=/tmp/c.p .
+        % go-torch $(go tool compile -n) /tmp/c.p
+        INFO[16:00:09] Run pprof command: go tool pprof -raw -seconds 30 /Users/dfc/go/pkg/tool/darwin_amd64/compile /tmp/c.p
+        INFO[16:00:09] Writing svg to torch.svg
+
+.link images/torch.svg
+
+* go tool trace
+
+In Go 1.5, Dmitry Vyukov added a new kind of profiling to the runtime; [[https://golang.org/doc/go1.5#trace_command][execution trace profiling]].
+
+Gives insight into dynamic execution of a program.
+
+Captures with nanosecond precision:
+
+- goroutine creation/start/end
+- goroutine blocking/unblocking
+- network blocking
+- system calls
+- GC events
+
+Execution traces are essentially undocumented ☹️, see [[https://github.com/golang/go/issues/16526][github/go#16526]]
+
+* go tool trace (cont.)
+
+Generating a profile (with [[https://go-review.googlesource.com/#/c/25354/][CL 25354]] applied):
+
+        % go build -gcflags=-traceprofile=/tmp/t.p cmd/compile/internal/gc
+
+Viewing the trace:
+
+        % go tool trace /tmp/t.p
+        2016/08/13 17:01:04 Parsing trace...
+        2016/08/13 17:01:04 Serializing trace...
+        2016/08/13 17:01:05 Splitting trace...
+        2016/08/13 17:01:06 Opening browser
+
+DEMO:
+
+        go tool trace examples/t.p
+
+Bonus: [[https://github.com/pkg/profile/releases/tag/v1.2.0][`github.com/pkg/profile`]] supports generating trace profiles.
+
+        defer profile.Start(profile.TraceProfile).Stop()
+
+* Exercises
+
+Profile an application using:
+
+TODO: prepare sample application
+
+- pprof
+- go-uber
+- go tool trace
 
 * Memory management and GC tuning
 
@@ -722,6 +791,11 @@ Do not place important items in a `sync.Pool`, they will be discarded.
 
 _Personal_opinion_: `sync.Pool` is hard to use safely. Don't use `sync.Pool`.
 
+* Exercises
+
+- Benchmark byte's string(byte) map keys
+- Benchmark allocs from different concat strategies.
+
 * Concurrency
 
 * Concurrency
@@ -742,7 +816,7 @@ The Go runtime has been written for programs with tens of thousands of goroutine
 
 However, each goroutine does consume a minimum amount of memory for the goroutine's stack which is currently at least 2k.
 
-2048 * 1,000,000 goroutines == 2Gb of memory per 1,000,000 goroutines.
+2048 * 1,000,000 goroutines == 2Gb of memory, and they haven't done anything yet.
 
 # Maybe this is a lot, maybe it isn't given the other usages of your application
 
@@ -756,7 +830,11 @@ If you don't know the answer, that's a potential memory leak.
 
 In your design, some goroutines may run until the program exits. These goroutines are rare enough to not become an exception to the rule.
 
-Never start a goroutine without knowing how it will stop.
+*Never*start*a*goroutine*without*knowing*how*it*will*stop*.
+
+* Know when to stop a goroutine (cont.)
+
+TODO SHOW HOW TO STOP A GOROUTINE USING A DONE CHANNEL
 
 * Go uses efficient network polling for some requests
 
@@ -809,7 +887,7 @@ You need to limit the amount of blocking IO you issue. Use a pool of worker goro
 
 .code examples/semaphore.go /START OMIT/,/END OMIT/
 
-* Minimise CGO
+* Minimise cgo
 
 cgo allows Go programs to call into C libraries. 
 
@@ -817,19 +895,20 @@ C code and Go code live in two different universes, cgo traverses the boundary b
 
 This transition is not free and depending on where it exists in your code, the cost could be substantial.
 
-Do not call out to C code in the middle of a tight loop.
-
 cgo calls are similar to blocking IO, they consume a thread during operation.
 
-* Avoid CGO
+Do not call out to C code in the middle of a tight loop.
 
-cgo has a high overhead
+* Actually, avoid CGO
+
+cgo has a high overhead.
 
 For best performance I recommend avoiding cgo in your applications.
 
-if you're using cgo to call a very short cgo function, where the overhead is the most noticable, rewrite that code in go -- by definition it's short.
+- If you're using cgo to call a very short C function, where the overhead is the most noticable, rewrite that code in Go -- by definition it's short.
+- If the C code takes a long time, cgo overhead is not as important.
 
-If the cgo code takes a long time, cgo overhead is not as important.
+Is there anyone who's using cgo to call expensive C code frequently?
 
 .link http://dave.cheney.net/2016/01/18/cgo-is-not-go Further reading: cgo is not Go.
 
@@ -837,27 +916,17 @@ If the cgo code takes a long time, cgo overhead is not as important.
 
 Old versions of Go will never get better. They will never get bug fixes or optimisations.
 
-Go 1.4 had a faster compiler, but the garbage collector does not scale as well as Go 1.6.
+- Go 1.4 should not be used.
+- Go 1.5 and 1.6 has a slower compiler, but it produces faster code, and has a faster GC.
+- Go 1.7 delivered roughly a 30% improvement in compilation speed, a 2x improvement in linking speed (better than any previous version of Go).
+- Go 1.8 will deliver a smaller improvement in compilation speed (at this point), but a signfificant improvement in code quality for non Intel architectures.
 
-Go 1.5 and 1.6 has a slower compiler, but it produces faster code, and has a faster GC.
+Old version of Go receive no updates. Do not stay on them. Use the latest and you will get the best performance.
 
-We will fix the speed of the compiler, and the code produced by the compiler will always be better
-
-Old version of Go receive no updates, do not stay on them, use the latest and you will get the best performance.
-
-* Go 1.7 compiler performance
-
-.image writing-high-performance-go/go17burndown.png _ 950
-
-I'm sorry about Go 1.5 and Go 1.6 compile speed, believe me, nobody is happy with the situation and we are working on improving it.
+.link http://dave.cheney.net/2016/04/02/go-1-7-toolchain-improvements Go 1.7 toolchain improvements
+.link http://dave.cheney.net/2016/09/18/go-1-8-performance-improvements-one-month-in Go 1.8 performance improvements
 
 * TODO
-
-DISCUSS ESCAPE ANALYSIS
-
-DISCUSS INLINING
-
-DISCUSS CACHE LINES, FALSE SHARING, AND DATA LOCALITY VS GLOBAL STATE
 
 Caches made sense when there was _one_ cpu and you wanted to avoid doing the same thing more than once. 
 
@@ -873,6 +942,9 @@ Thisngs which you should not cache
 
 - things which you computed yourself
 
+* Discussion
+
+Any questions?
 
 * Conclusion
 
@@ -890,6 +962,9 @@ Don't leave complex code that is not performance critical, rewrite it with simpl
 
 * Don't trade performance for reliability
 
+"I can make things very fast if they don't have to be correct."
+.caption Russ Cox
+
 Most of these tips are about performance, but some of them are about reliability.
 
 I see little value in having a very fast server that panics, deadlocks or OOMs on a regular basis.
@@ -900,7 +975,7 @@ Performance and reliability are equally important.
 
 Old versions of Go will never get better. They will never get bug fixes or optimisations.
 
-I'm sorry about Go 1.5 and Go 1.6 compile speed, believe me, nobody is happy with the situation and we are working on improving it.
+I'm sorry about the speed of the compiler. Believe me, nobody is happy with the situation and we are working on improving it, but if you're sticking with Go 1.4.3, it's time to move on.
 
 Always use the latest version of Go and you will get the best possible performance.
 
