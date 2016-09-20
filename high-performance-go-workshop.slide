@@ -17,7 +17,7 @@ The materials for this presentation are available on GitHub:
 
 .link https://github.com/davecheney/high-performance-go-workshop
 
-You are encouraged to remix, transform, or build upon the material, providing you give appropraite credit and distribute your contributions under the same license.
+You are encouraged to remix, transform, or build upon the material, providing you give appropriate credit and distribute your contributions under the same license.
 
 * Agenda
 
@@ -67,7 +67,7 @@ But this is all changing.
 
 Clock speeds have not increased in a decade.
 
-The number of transisters per dollar has started to fall.
+The number of transistors per dollar has started to fall.
 
 * More cores
 
@@ -83,7 +83,7 @@ CPU core count is dominated by heat dispation and cost.
 
 Shrinking the size of a transitor, to fit more in the same sized die, is hitting a wall.
 
-CPU dies can be made larger, but that increases latency, and cost per transister.
+CPU dies can be made larger, but that increases latency, and cost per transistor.
 
 * Modern CPUs are optimised for bulk transfers
 
@@ -619,7 +619,7 @@ The Go GC is designed for low latency servers and interactive applications.
 
 A simple way to obtain a general idea of how hard the garbage collector is working is to enable the output of GC logging.
 
-These stats are always collected, but normally supressed, you can enable their display by setting the `GODEBUG` environment variable.
+These stats are always collected, but normally suppressed, you can enable their display by setting the `GODEBUG` environment variable.
 
 	% env GODEBUG=gctrace=1 godoc -http=:8080
 	gc 1 @0.017s 8%: 0.021+3.2+0.10+0.15+0.86 ms clock, 0.043+3.2+0+2.2/0.002/0.009+1.7 ms cpu, 5->6->1 MB, 4 MB goal, 4 P
@@ -905,7 +905,7 @@ cgo has a high overhead.
 
 For best performance I recommend avoiding cgo in your applications.
 
-- If you're using cgo to call a very short C function, where the overhead is the most noticable, rewrite that code in Go -- by definition it's short.
+- If you're using cgo to call a very short C function, where the overhead is the most noticeable, rewrite that code in Go -- by definition it's short.
 - If the C code takes a long time, cgo overhead is not as important.
 
 Is there anyone who's using cgo to call expensive C code frequently?
