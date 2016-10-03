@@ -986,6 +986,9 @@ Don't leave complex code that is not performance critical, rewrite it with simpl
 "I can make things very fast if they don't have to be correct."
 .caption Russ Cox
 
+"Readable means reliable"
+.caption Rob Pike
+
 Most of these tips are about performance, but some of them are about reliability.
 
 I see little value in having a very fast server that panics, deadlocks or OOMs on a regular basis.
