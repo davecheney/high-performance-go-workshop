@@ -57,7 +57,7 @@ What are its properties and how have they changed over time?
 
 As software authors we have benefited from Moore's Law, the doubling of the number of available transistors on a chip every 18 months, for 50 years.
 
-No other industry has experienced a _six order of magnitude improvement in their tools in the space of a lifetime.
+No other industry has experienced a _six_order_of_magnitude_ improvement in their tools in the space of a lifetime.
 
 But this is all changing.
 
@@ -94,8 +94,8 @@ CPU dies can be made larger, but that increases latency, and cost per transistor
 
 Much of the improvement in performance in the last two decades has come from architectural improvements:
 
-- out of order execution
 - speculative execution
+- out of order execution (superscalar)
 - vector (SSE) instructions
 
 Thus, modern CPUs are optimised for bulk transfers and bulk operations. At every level, the setup cost of an operation encourages you to work in bulk.
@@ -593,6 +593,80 @@ TODO: prepare sample application
 - go-uber
 - go tool trace
 
+* Compiler optimisations
+
+* Compiler optimisations
+
+TODO introduction
+
+* Escape analysis
+
+TODO explain escape analyss
+
+* Escape analysis (example)
+
+Sum adds the ints between 1 and 100 and returns the result. This is a rather unusual way to do this, but it illustrates how escape Analysis works.
+
+.code  examples/esc/sum.go /START OMIT/,/END OMIT/
+
+Because the numbers slice is only referenced inside Sum, the compiler will arrange to store the 100 integers for that slice on the stack, rather than the heap. There is no need to garbage collect numbers, it is automatically freed when Sum returns.
+
+* Investigating escape analysis
+
+To print the compilers escape analysis decisions, use the `-m` flag.
+
+ % go build -gcflags=-m examples/esc/sum.go
+ # command-line-arguments
+ examples/esc/sum.go:10: Sum make([]int, 100) does not escape
+ examples/esc/sum.go:25: Sum() escapes to heap
+ examples/esc/sum.go:25: main ... argument does not escape
+
+TODO: explain
+
+* Escape analysis (example)
+
+This second example is also a little contrived. In CenterCursor we create a new Cursor and store a pointer to it in c.
+
+.code  examples/esc/center.go /START OMIT/,/END OMIT/
+
+Then we pass c to the Center() function which moves the Cursor to the center of the screen.
+
+Then finally we print the X and Y locations of that Cursor.
+
+Even though c was allocated with the new function, it will not be stored on the heap, because no reference c escapes the CenterCursor function.
+
+
+
+* Exercise
+
+- Write a benchmark to provide that `Sum` does not allocate
+- Change `Sum` to take `count` as a variable. Does that affect escape analysis? Why?
+
+* Inlining 
+
+Function calls in go have a fixed overhead:
+
+- Stack check
+- Preemption check 
+
+Some of this is ameliorated by hardware branch predictors, but it's still a cost in times of function size and clock cycles.
+
+Inclining is the classical optimisation to avoid these costs. 
+
+- If your function does a lot of work, then the preamble overhead will be negligible. That's why functions over a certain size (currently some count of instructions, plus a few operations which prevent inclining all together (switch was up until go 1.7)
+- Small functions on the other hand pay a fixed overhead for a relatively small amount of useful work performed. These are the functions that inclining targets. As they benefit the most. 
+
+But what about functions behind interfaces, they are never inclined (talk about interface dispatch cache).
+The answer there is to not call small interface functions a lot. 
+
+* Inlining (example)
+
+Show how max of a constant inlines and is eliminated. 
+
+* Constant elimination
+
+TODO constant elimination
+
 * Memory management and GC tuning
 
 * Memory management and GC tuning
@@ -857,6 +931,8 @@ In your design, some goroutines may run until the program exits. These goroutine
 
 TODO SHOW HOW TO STOP A GOROUTINE USING A DONE CHANNEL
 
+* Send ral wor
+
 * Go uses efficient network polling for some requests
 
 The Go runtime handles network IO using an efficient operating system polling mechanism (kqueue, epoll, windows IOCP, etc). Many waiting goroutines will be serviced by a single operating system thread.
@@ -870,7 +946,7 @@ Your disk subsystem does not expect to be able to handle hundreds or thousands o
 * io.Reader and io.Writer are not buffered
 
 `io.Reader` and `io.Writer` implementations are not buffered.
-
+	
 This includes `net.Conn` and `os.Stdout`.
 
 Use `bufio.NewReader(r)` and `bufio.NewWriter(w)` to get a buffered reader and writer.
@@ -908,6 +984,16 @@ You need to limit the amount of blocking IO you issue. Use a pool of worker goro
 
 .code examples/semaphore.go /START OMIT/,/END OMIT/
 
+* Defer is expensive, or is it?
+
+Defer is expensive. Talk about this costs and what is going to happen in the future. 
+
+Note that this is a case where readability and maintenance is sacrificed for a performance win. 
+
+Always revisit these decisons. 
+
+.link https://github.com/golang/go/issues/9704#issuecomment-251003577
+
 * Minimise cgo
 
 cgo allows Go programs to call into C libraries. 
@@ -920,14 +1006,15 @@ cgo calls are similar to blocking IO, they consume a thread during operation.
 
 Do not call out to C code in the middle of a tight loop.
 
-* Actually, avoid CGO
+* Actually, avoid cgo
 
 cgo has a high overhead.
 
 For best performance I recommend avoiding cgo in your applications.
 
-- If you're using cgo to call a very short C function, where the overhead is the most noticeable, rewrite that code in Go -- by definition it's short.
 - If the C code takes a long time, cgo overhead is not as important.
+- If you're using cgo to call a very short C function, where the overhead is the most noticeable, rewrite that code in Go -- by definition it's short.
+- If you're using a large piece of expensive C code is called in a tight loop, why are you using Go?
 
 Is there anyone who's using cgo to call expensive C code frequently?
 
