@@ -611,8 +611,6 @@ Bonus: [[https://github.com/pkg/profile/releases/tag/v1.2.0][`github.com/pkg/pro
 
 Profile an application using:
 
-TODO: prepare sample application
-
 - pprof
 - go-uber
 - go tool trace
@@ -955,8 +953,6 @@ In your design, some goroutines may run until the program exits. These goroutine
 
 TODO SHOW HOW TO STOP A GOROUTINE USING A DONE CHANNEL
 
-* Send ral wor
-
 * Go uses efficient network polling for some requests
 
 The Go runtime handles network IO using an efficient operating system polling mechanism (kqueue, epoll, windows IOCP, etc). Many waiting goroutines will be serviced by a single operating system thread.
@@ -1057,22 +1053,6 @@ Old version of Go receive no updates. Do not stay on them. Use the latest and yo
 
 .link http://dave.cheney.net/2016/04/02/go-1-7-toolchain-improvements Go 1.7 toolchain improvements
 .link http://dave.cheney.net/2016/09/18/go-1-8-performance-improvements-one-month-in Go 1.8 performance improvements
-
-* TODO
-
-Caches made sense when there was _one_ CPU and you wanted to avoid doing the same thing more than once.
-
-But we have many CPUs, and they are all competing to do the thing, and the cost of them coordinating on the thing _may_ be more than just doing the thing.
-
-What sort of things should be cached
-
-- things from the network
-- thinsg from disk
-- things from something you had to take a lock for -- think about it, if you have to take a lock, it's already out of date. If you need to _always_ get the fresh value, then you cannot cache it.
-
-Thisngs which you should not cache
-
-- things which you computed yourself
 
 * Discussion
 
