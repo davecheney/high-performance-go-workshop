@@ -1,4 +1,6 @@
 High Performance Go
+Paris
+9 Oct 2016
 
 Dave Cheney
 dave@cheney.net
@@ -37,13 +39,11 @@ After each section we'll have time for questions.
 
 This isn't a lecture, it's a conversation.
 
-If you don't understand something, or don't think what you're hearing is correct, speak up.
+If you don't understand something, or think what you're hearing is incorrect, speak up.
 
 * What does performance mean, what is possible?
 
 * What does performance mean?
-
-What do we mean when we say high performance?
 
 Before we start to talk about writing high performance code, we should establish an understanding of the current trends in computing hardware and outline the issues facing high performance software development.
 
@@ -174,7 +174,7 @@ Before you benchmark, you must have a stable environment to get repeatable resul
 - The machine must be idle—don't profile on shared hardware, don't browse the web while waiting for a long benchmark to run.
 - Watch out for power saving and thermal scaling.
 - Avoid virtual machines and shared cloud hosting; they are too noisy for consistent measurements.
-- There is a kernel bug on OS X versions less than El Capitan; upgrade or avoid profiling on OS X.
+- There is a kernel bug on OS X versions before El Capitan; upgrade or avoid profiling on OS X. This also affects other *BSDs.
 
 If you can afford it, buy dedicated performance test hardware. Rack it, disable all the power management and thermal scaling and never update the software on those machines.
 
@@ -190,24 +190,47 @@ For everyone else, have a before and after sample and run them multiple times to
 
 DEMO: `go`test`-bench=.`
 
+* How benchmarks work
+
+Each benchmark is run `b.N` times until it takes longer than 1 second.
+
+`b.N` starts a 1 if the benchmark completes in under 1 second the `b.N` is increased and the benchmark run again.
+
+`b.N` increases in the sequence, 1, 2, 5, 10, 20, 50, 100, ...
+
+Below the microsecond mark you will start to see the relativistic effects of code reordering and code alignment. 
+
+- Run benchmarks with a low count longer to get more accuracy; `go test -benchtime=10s`
+- Run benchmarks multiple times; `go test -count=10`
+
+If this is important, codify it in a makefile so everyone is comparing apples to apples .
+
+Show benchcmp and bench stay
+
+Setups costs usually amortized. Reset timer better than stop and start timer. 
+
+Talk about bench allocated, more useful than raw wall time,
+
+Explain how bench allows report allocated works, especially the integer result
+
 * Comparing benchmarks
 
-Determining performance improvements when there are more than one benchmark in a package can be overwhelming.
+For repeatable results, you should run benchmarks multiple times.
 
-You should always run your benchmarks multiple times to eliminate background noise.
+You can do this manually, or use the `-count=` flag.
 
-Tools like [[https://godoc.org/rsc.io/benchstat][rsc.io/benchstat]] are useful for comparing before and after comparisons.
+Determining the performance delta between two sets of benchmarks can be tedious and error prone.
 
-	% go test -bench=. -count=20 > old.txt
+Tools like [[https://godoc.org/rsc.io/benchstat][rsc.io/benchstat]] are useful for comparing results.
+
+        % go test -bench=. -count=5 > old.txt
 
 DEMO: Improve `Fib`
 
-	% go test -bench=. -count=20 > new.txt
-	% benchstat old.txt new.txt                                                             
-	name   old time/op  new time/op  delta
-	Fib-4   378ns ± 0%   237ns ± 0%  -37.30%  (p=0.000 n=14+16)
+        % go test -bench=. -count=5 > new.txt
+        % benchstat old.txt new.txt
 
-DEMO: `benchstat`
+DEMO: `benchstat`{old,new}.txt`
 
 * TODO: DISCUSS -benchallocs, DISCUSS b.ReportAllocs, b.Reset, ....
 
@@ -597,15 +620,23 @@ TODO: prepare sample application
 
 * Compiler optimisations
 
-TODO introduction
+This section gives a brief background on three important optimisations that the Go compiler performs.
 
 * Escape analysis
 
-TODO explain escape analyss
+A compliant Go implementation _could_ store every allocation on the heap, but that would put a lot of pressure on the gc.
+
+However, the stack exists as a cheap (no need to garbage collect things on the stack) place to store local variables.
+
+In some languages, like C and C++, stack/heap allocation is manual, and a common cause of memory corruption bugs.
+
+In Go, the compiler automatically moves local values to the stack if they live beyond the lifetime of the function call. It is said that the value  _escapes_ to the heap.
+
+But the compiler can also do the opposite, it can find things which would be assumed to be allocated on the heap, `new`, `make`, etc, and move them to stack.
 
 * Escape analysis (example)
 
-Sum adds the ints between 1 and 100 and returns the result. This is a rather unusual way to do this, but it illustrates how escape Analysis works.
+Sum adds the ints between 1 and 100 and returns the result. This is a rather unusual way to do this, but it illustrates how escape analysis works.
 
 .code  examples/esc/sum.go /START OMIT/,/END OMIT/
 
@@ -635,7 +666,7 @@ Then finally we print the X and Y locations of that Cursor.
 
 Even though c was allocated with the new function, it will not be stored on the heap, because no reference c escapes the CenterCursor function.
 
-
+.link https://github.com/golang/go/issues/7714 Escape analysis is not perfect
 
 * Exercise
 
@@ -644,20 +675,18 @@ Even though c was allocated with the new function, it will not be stored on the 
 
 * Inlining 
 
-Function calls in go have a fixed overhead:
-
-- Stack check
-- Preemption check 
+In Go function calls in have a fixed overhead; Stack check and Preemption check.
 
 Some of this is ameliorated by hardware branch predictors, but it's still a cost in times of function size and clock cycles.
 
-Inclining is the classical optimisation to avoid these costs. 
+Inlining is the classical optimisation to avoid these costs. 
 
-- If your function does a lot of work, then the preamble overhead will be negligible. That's why functions over a certain size (currently some count of instructions, plus a few operations which prevent inclining all together (switch was up until go 1.7)
-- Small functions on the other hand pay a fixed overhead for a relatively small amount of useful work performed. These are the functions that inclining targets. As they benefit the most. 
+Inlining only works on _leaf_functions_, a function that does not call another. The justification for this is:
 
-But what about functions behind interfaces, they are never inclined (talk about interface dispatch cache).
-The answer there is to not call small interface functions a lot. 
+- If your function does a lot of work, then the preamble overhead will be negligible. That's why functions over a certain size (currently some count of instructions, plus a few operations which prevent inlining all together (switch was up until go 1.7)
+- Small functions on the other hand pay a fixed overhead for a relatively small amount of useful work performed. These are the functions that inlining targets as they benefit the most. 
+
+The other reason is it makes stack traces harder to follow.
 
 * Inlining (example)
 
