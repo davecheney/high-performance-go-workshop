@@ -190,6 +190,17 @@ For everyone else, have a before and after sample and run them multiple times to
 
 DEMO: `go`test`-bench=.`
 
+* Benchmarking allocations
+
+Benchmark time is influenced by allocation.
+
+You can tell the
+
+
+_Note:_ you can also use the `go test -benchmem` flag to do the same for _all_ benchmarks.
+
+
+
 * How benchmarks work
 
 Each benchmark is run `b.N` times until it takes longer than 1 second.
@@ -232,8 +243,6 @@ DEMO: Improve `Fib`
 
 DEMO: `benchstat`{old,new}.txt`
 
-* TODO: DISCUSS -benchallocs, DISCUSS b.ReportAllocs, b.Reset, ....
-
 * Watch out for compiler optimisations
 
 How fast will this benchmark run ?
@@ -258,26 +267,11 @@ DEMO: show how to fix popcnt
 
 * Benchmark mistakes
 
-- TODO don't scale by b.N
-- benchmarking expensive setup
+The `for` loop is crucial to the operation of the benchmark.
 
-* Compiler flags
+Here are two incorrect benchmarks, can you explain what is wrong with them?
 
-* Compiler flags (cont.)
-
-Showing the assembly output of a package:
-
-* TODO DISCUSS ESCAPE ANALYSIS
-
-* TODO DISCUSS INLINING
-
-* TODO DISCUSS CACHE LINES, FALSE SHARING, AND DATA LOCALITY VS GLOBAL STATE
-
-* Exercises
-
-- `-S` prints the (Go flavoured) assembly of a function
-- `-l` controls the behaviour of the inliner, `-l` disables inlining, `-l -l` increases it. Experiment with the difference.
-- `-m` controls printing of optimisation decision like inlining, escape analysis.
+.code examples/benchfib/wrong_test.go /START OMIT/,/END OMIT/
 
 * Performance measurement and profiling
 
@@ -696,6 +690,16 @@ Show how max of a constant inlines and is eliminated.
 
 TODO constant elimination
 
+* Compiler flags
+
+Showing the assembly output of a package:
+
+* Exercises
+
+- `-S` prints the (Go flavoured) assembly of a function
+- `-l` controls the behaviour of the inliner, `-l` disables inlining, `-l -l` increases it. Experiment with the difference.
+- `-m` controls printing of optimisation decision like inlining, escape analysis.
+
 * Memory management and GC tuning
 
 * Memory management and GC tuning
@@ -805,7 +809,7 @@ The first Read method takes no arguments and returns some data as a `[]byte`. Th
 
 The first Read method will _always_ allocate a buffer, putting pressure on the GC. The second fills the buffer it was given.
 
-TODO FIND EXAMPLES IN THE STDLIB
+_Exercise_: Can you name examples in the std lib which follow this pattern?
 
 * Reduce allocations (cont.)
 
@@ -839,34 +843,17 @@ This will avoid the conversion of the byte slice to a string for the map lookup.
      key := string(bytes)
      val, ok := m[key] 
 
-# * -benchallocs and reportallocs
-#
-# TODO show benchmarking of allocations.
-
 * Avoid string concatenation
+
+Which of the following is fastest? 
+
+.code examples/concat/concat.go /START OMIT/,/END OMIT/
+
+* Avoid string concatenation (cont.)
 
 Go strings are immutable. Concatenating two strings generates a third.
 
 Avoid string concatenation by appending into a `[]byte` buffer.
-
-_Before:_
-
-    s := request.ID
-    s += " " + client.Address().String()
-    s += " " + time.Now().String()
-    return s
-
-_After:_
-
-    b := make([]byte, 0, 40) // guess
-    b = append(b, request.ID...)
-    b = append(b, ' ')
-    b = append(b, addr.String()...)
-    b = append(b, ' ')
-    b = time.Now().AppendFormat(b, "2006-01-02 15:04:05.999999999 -0700 MST")
-    return string(b)
-
-DEMO: `go`test`-bench=.`./concat`
 
 * Preallocate slices if the length is known
 
@@ -899,8 +886,6 @@ _After:_
      }
      return s
 
-TODO FIND A BETTER EXAMPLE
-
 * Using sync.Pool
 
 The `sync` package comes with a `sync.Pool` type which is used to reuse common objects.
@@ -917,7 +902,10 @@ _Personal_opinion_: `sync.Pool` is hard to use safely. Don't use `sync.Pool`.
 
 * Exercises
 
+- Using `godoc` (or another program) observe the results of changing `GOGC`.
+
 - Benchmark byte's string(byte) map keys
+
 - Benchmark allocs from different concat strategies.
 
 * Concurrency
