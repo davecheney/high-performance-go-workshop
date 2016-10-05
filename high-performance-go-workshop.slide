@@ -277,9 +277,9 @@ Here are two incorrect benchmarks, can you explain what is wrong with them?
 
 * Performance measurement and profiling
 
-TODO INTRODUCTION
+In the previous section we studied how to measure the performance of programs from the outside.
 
-In the previous section
+In this section we'll use profiling tools to investigate the operation of the program from the inside.
 
 * pprof
 
@@ -322,7 +322,7 @@ Because of memory profiling is sample based and because it tracks _allocations_ 
 
 _Personal_Opinion:_ I do not find memory profiling useful for finding memory leaks. There are better ways to determine how much memory your application is using. We will discuss these later in the presentation.
 
-TODO: MAKE SURE YOU COVER MEMORY LEAKS LATER
+# TODO: MAKE SURE YOU COVER MEMORY LEAKS LATER
 
 * Block profiling
 
@@ -423,12 +423,19 @@ Here is a visualisation of a memory profile:
 
     % go build -gcflags='-memprofile=/tmp/m.p'
     % go tool pprof --alloc_objects -svg $(go tool -n compile) /tmp/m.p > alloc_objects.svg
-    % go tool pprof --inuse_objects -svg $(go tool -n compile) /tmp/m.p > alloc_objects.svg
+    % go tool pprof --inuse_objects -svg $(go tool -n compile) /tmp/m.p > inuse_objects.svg
+
+- Alloc objects reports the call site where each allocation was made
 
 .link images/alloc_objects.svg
+
+- Inuse objects reports the call site where an allocation was made if it was reachable at the end of the profile
+
 .link images/inuse_objects.svg
 
-TODO: DESCRIBE THE DIFFERENCE BETWEEN INUSE AND ALLOC
+DEMO: `examples/inuseallocs`
+
+* Using pprof (cont.) 
 
 Here is a visualisation of a block profile:
 
