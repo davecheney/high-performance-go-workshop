@@ -19,7 +19,7 @@ This slide deck and supporting material is part of the [_High Performence Go_](h
  cd high-performance-go-workshop && present
  ```
 
-The slides will be available at [http://127.0.0.1:3999/high-performance-go-workshop.slide](http://127.0.0.1:3999/high-performance-go-workshop.slide#1_
+The slides will be available at [http://127.0.0.1:3999/high-performance-go-workshop.slide](http://127.0.0.1:3999/high-performance-go-workshop.slide#1)
 
 # License and Materials
 
