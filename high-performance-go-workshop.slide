@@ -114,7 +114,7 @@ But, in terms of processor cycles lost, physical memory is still as far away as 
 
 .image images/xeon_e5_v4_hcc_rings.jpg _ 600
 
-Cache rules everything around it, but it is small, and will remain small because the speed of light determines how large a cache can for a certain latency.
+Cache rules everything around it, but it is small, and will remain small because the speed of light determines how large a cache can be for a certain latency.
 
 You can have a larger cache, but it will be slower because, in a universe where electricity travels a foot every nanosecond, distance equals latency.
 
@@ -485,7 +485,7 @@ We use microbenchmarks inside the standard library to make sure individual packa
 
 As I mentioned in the previous section, to profile an application, you must use the `runtime/pprof` package, but that is fiddly and low level.
 
-To make this easier, a few years ago I wrote a small package, [[https://github.com/pkg/profile][github.com/pkg/profile]], to make it easier to profile an application.
+A few years ago I wrote a small package, [[https://github.com/pkg/profile][github.com/pkg/profile]], to make it easier to profile an application.
 
      import "github.com/pkg/profile
 
