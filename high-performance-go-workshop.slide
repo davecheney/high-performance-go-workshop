@@ -81,7 +81,7 @@ CPU core count is dominated by heat dissipation and cost.
 
 .image images/Mjc5MTM2Nw.png _ 580
 
-Shrinking the size of a Transistor, to fit more in the same sized die, is hitting a wall.
+Shrinking the size of a transistor, to fit more in the same sized die, is hitting a wall.
 
 CPU dies can be made larger, but that increases latency, and cost per transistor.
 
@@ -94,8 +94,8 @@ CPU dies can be made larger, but that increases latency, and cost per transistor
 
 Much of the improvement in performance in the last two decades has come from architectural improvements:
 
-- speculative execution
 - out of order execution (superscalar)
+- speculative execution
 - vector (SSE) instructions
 
 Thus, modern CPUs are optimised for bulk transfers and bulk operations. At every level, the setup cost of an operation encourages you to work in bulk.
@@ -190,17 +190,6 @@ For everyone else, have a before and after sample and run them multiple times to
 
 DEMO: `go`test`-bench=.`
 
-* Benchmarking allocations
-
-Benchmark time is influenced by allocation.
-
-You can tell the
-
-
-_Note:_ you can also use the `go test -benchmem` flag to do the same for _all_ benchmarks.
-
-
-
 * How benchmarks work
 
 Each benchmark is run `b.N` times until it takes longer than 1 second.
@@ -214,15 +203,12 @@ Below the microsecond mark you will start to see the relativistic effects of cod
 - Run benchmarks with a low count longer to get more accuracy; `go test -benchtime=10s`
 - Run benchmarks multiple times; `go test -count=10`
 
-If this is important, codify it in a makefile so everyone is comparing apples to apples .
-
-Show benchcmp and bench stay
+If this is important, codify it in a makefile so everyone is comparing apples to apples.
 
 Setups costs usually amortized. Reset timer better than stop and start timer. 
 
 Talk about bench allocated, more useful than raw wall time,
 
-Explain how bench allows report allocated works, especially the integer result
 
 * Comparing benchmarks
 
@@ -242,6 +228,30 @@ DEMO: Improve `Fib`
         % benchstat old.txt new.txt
 
 DEMO: `benchstat`{old,new}.txt`
+
+* Benchmarking allocations
+
+Allocation count and size is strongly correlated with benchmark time.
+
+You can tell the `testing` framework to record the number of allocations made by code under test with
+
+ b.ReportAllocs()
+
+DEMO: `go`test`-run=^$`-bench=.`bufio`
+
+_Note:_ you can also use the `go test -benchmem` flag to do the same for _all_ benchmarks.
+
+DEMO: `go`test`-run=^$`-bench=.`-benchmem`bufio`
+
+* Benchmarking allocations (cont.)
+
+How do `b.ReportAllocs()` and `-benchmem` work?
+
+The `testing.B` structure tracks the number and size of allocations before and after the benchmark.
+
+The delta between these is divided by the size of `b.N` giving you an alloc count per iteration.
+
+Memory is allocated and tracked is an integer, this division suffers from rouding; you cannot allocate a ⅓ of a byte and you cannot do that ⅓ of a time. So non integer results _round_down_ according to the integer division rules in Go.
 
 * Watch out for compiler optimisations
 
