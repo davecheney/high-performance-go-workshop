@@ -178,28 +178,33 @@ For everyone else, have a before and after sample and run them multiple times to
 
 * Using the testing package for benchmarking
 
+The `testing` package has built in support for writing benchmarks.
+
 .code examples/fib/fib_test.go /STARTFIB OMIT/,/ENDFIB OMIT/
-.caption examples/fib/fib.go
 
 .code examples/fib/fib_test.go /STARTBENCH OMIT/,/ENDBENCH OMIT/
-.caption examples/fib/fib_test.go
 
-DEMO: `go`test`-bench=.`
+DEMO: `go`test`-bench=.`./examples/fib`
 
 * How benchmarks work
 
 Each benchmark is run `b.N` times until it takes longer than 1 second.
 
-`b.N` starts a 1 if the benchmark completes in under 1 second the `b.N` is increased and the benchmark run again.
+`b.N` starts at 1, if the benchmark completes in under 1 second `b.N` is increased and the benchmark run again.
 
 `b.N` increases in the sequence, 1, 2, 5, 10, 20, 50, 100, ...
 
+ % go test -bench=. ./examples/fib
+ BenchmarkFib-4             30000             46408 ns/op
+ PASS
+ ok      _/Users/dfc/devel/high-performance-go-workshop/examples/fib     1.910s
+
 Below the microsecond mark you will start to see the relativistic effects of code reordering and code alignment. 
 
-- Run benchmarks with a low count longer to get more accuracy; `go test -benchtime=10s`
-- Run benchmarks multiple times; `go test -count=10`
+- Run benchmarks longer to get more accuracy; `go`test`-benchtime=10s`
+- Run benchmarks multiple times; `go`test`-count=10`
 
-If this is important, codify it in a `Makefile` so everyone is comparing apples to apples.
+_Tip:_ If this is required, codify it in a `Makefile` so everyone is comparing apples to apples.
 
 # Setups costs usually amortized. Reset timer better than stop and start timer. 
 
@@ -232,7 +237,7 @@ You can tell the `testing` framework to record the number of allocations made by
 
 DEMO: `go`test`-run=^$`-bench=.`bufio`
 
-_Note:_ you can also use the `go test -benchmem` flag to do the same for _all_ benchmarks.
+_Note:_ you can also use the `go`test`-benchmem` flag to do the same for _all_ benchmarks.
 
 DEMO: `go`test`-run=^$`-bench=.`-benchmem`bufio`
 
@@ -244,7 +249,9 @@ The `testing.B` structure tracks the number and size of allocations before and a
 
 The delta between these is divided by the size of `b.N` giving you an alloc count per iteration.
 
-Memory is allocated and tracked is an integer, this division suffers from rounding; you cannot allocate a ⅓ of a byte and you cannot do that ⅓ of a time. So non integer results _round_down_ according to the integer division rules in Go.
+Memory is allocated and tracked is an integer, this division suffers from rounding; you cannot allocate a ⅓ of a byte and you cannot do that ⅓ times.
+
+Allocation results _round_down_ according to the integer division rules in Go.
 
 * Watch out for compiler optimisations
 
@@ -255,6 +262,8 @@ How fast will this benchmark run ?
 DEMO: `go`test`-bench=.`./examples/popcnt`
 
 * What happened?
+
+ % go test -bench=. ./examples/popcnt
 
 `popcnt` is a leaf function, so the compiler can inline it.
 
@@ -489,7 +498,7 @@ To make this easier, a few years ago I wrote a small package, [[https://github.c
 
 - Generate a profile from a piece of code you know well. If you don't have a code sample, try profiling `godoc`.
 
-- Generate a profile on one machine, and inspect it on another.
+- If you were to generate a profile on one machine and inspect it on another, how would you do it?
 
 * Framepointers
 
@@ -697,7 +706,7 @@ Even though `c` was allocated with the new function, it will not be stored on th
 
 - Write a benchmark to provide that `Sum` does not allocate
 - What is happening on line 25? Open up `examples/esc/sum.go` and see.
-- Change `Sum` to take `count` as a variable. Does that affect escape analysis? Why?
+# - Change `Sum` to take `count` as a variable. Does that affect escape analysis? Why?
 
 * Inlining 
 
@@ -709,7 +718,7 @@ Inlining is the classical optimisation to avoid these costs.
 
 Inlining only works on _leaf_functions_, a function that does not call another. The justification for this is:
 
-- If your function does a lot of work, then the preamble overhead will be negligible. That's why functions over a certain size (currently some count of instructions, plus a few operations which prevent inlining all together (switch was up until go 1.7)
+- If your function does a lot of work, then the preamble overhead will be negligible. That's why functions over a certain size (currently some count of instructions, plus a few operations which prevent inlining all together (eg. switch before Go 1.7)
 - Small functions on the other hand pay a fixed overhead for a relatively small amount of useful work performed. These are the functions that inlining targets as they benefit the most. 
 
 The other reason is it makes stack traces harder to follow.
@@ -741,7 +750,7 @@ DEMO: `go`build`-gcflags="-m`-S"`examples/max/max.go`2>&1`|`less`
 
 Why did the compiled code change when `a` and `b` moved from constant to variable?
 
-After inlining, this is what the compiler sees
+After inlining, this is what the compiler saw
 
 .play examples/max/max2.go /START OMIT/,/END OMIT/
 
