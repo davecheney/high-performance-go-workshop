@@ -203,12 +203,9 @@ Below the microsecond mark you will start to see the relativistic effects of cod
 - Run benchmarks with a low count longer to get more accuracy; `go test -benchtime=10s`
 - Run benchmarks multiple times; `go test -count=10`
 
-If this is important, codify it in a makefile so everyone is comparing apples to apples.
+If this is important, codify it in a `Makefile` so everyone is comparing apples to apples.
 
-Setups costs usually amortized. Reset timer better than stop and start timer. 
-
-Talk about bench allocated, more useful than raw wall time,
-
+# Setups costs usually amortized. Reset timer better than stop and start timer. 
 
 * Comparing benchmarks
 
@@ -283,6 +280,10 @@ Here are two incorrect benchmarks, can you explain what is wrong with them?
 
 .code examples/benchfib/wrong_test.go /START OMIT/,/END OMIT/
 
+* Discussion
+
+Are there any questions?
+
 * Performance measurement and profiling
 
 * Performance measurement and profiling
@@ -295,7 +296,7 @@ In this section we'll use profiling tools to investigate the operation of the pr
 
 The primary tool we're going to be talking about today is _pprof_.
 
-pprof descends from the Google Perf Tools suite of tools.
+[[https://github.com/google/pprof][pprof]] descends from the [[https://github.com/gperftools/gperftools][Google Perf Tools]] suite of tools.
 
 `pprof` profiling is built into the Go runtime.
 
@@ -454,14 +455,6 @@ Here is a visualisation of a block profile:
 
 .link images/block.svg 
 
-* How pprof works
-
-The Go runtime's profiling interface is in the `runtime/pprof` package.
-
-`runtime/pprof` is a very low level tool, and for historic reasons the interfaces to the different kinds of profile are not uniform.
-
-To make it easier to profile your code you should use a higher level interface.
-
 * Profiling benchmarks
 
 The `testing` package has built in support for generating CPU, memory, and block profiles.
@@ -475,7 +468,7 @@ Using any of these flags also preserves the binary.
     % go test -run=XXX -bench=. -cpuprofile=c.p bytes
     % go tool pprof bytes.test c.p
 
-_Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks.
+_Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks. You can also use `-run=^$` to acomplish the same thing.
 
 * Profiling applications
 
@@ -483,7 +476,9 @@ Profiling `testing` benchmarks is useful for _microbenchmarks_.
 
 We use microbenchmarks inside the standard library to make sure individual packages do not regress, but what if you want to profile a complete application?
 
-As I mentioned in the previous section, to profile an application, you must use the `runtime/pprof` package, but that is fiddly and low level.
+The Go runtime's profiling interface is in the `runtime/pprof` package.
+
+`runtime/pprof` is a very low level tool, and for historic reasons the interfaces to the different kinds of profile are not uniform.
 
 To make this easier, a few years ago I wrote a small package, [[https://github.com/pkg/profile][github.com/pkg/profile]], to make it easier to profile an application.
 
@@ -494,7 +489,11 @@ To make this easier, a few years ago I wrote a small package, [[https://github.c
            ...
      }
 
-DEMO: Show profiling `cmd/godoc` with `pkg/profile`
+* Exercise
+
+- Generate a profile from a piece of code you know well. If you don't have a code sample, try profiling `godoc`.
+
+- Generate a profile on one machine, and inspect it on another.
 
 * Framepointers
 
@@ -619,11 +618,11 @@ Bonus: [[https://github.com/pkg/profile/releases/tag/v1.2.0][`github.com/pkg/pro
 
 * Exercises
 
-Profile an application using:
+Profile an application using one of:
 
-- pprof
-- go-uber
-- go tool trace
+- `perf` (requires linux)
+- `go-uber`
+- `go`tool`trace`
 
 * Compiler optimisations
 
@@ -645,13 +644,16 @@ But the compiler can also do the opposite, it can find things which would be ass
 
 * Escape analysis (example)
 
-Sum adds the ints between 1 and 100 and returns the result. This is a rather unusual way to do this, but it illustrates how escape analysis works.
+Sum adds the ints between 1 and 100 and returns the result.
 
-.code  examples/esc/sum.go /START OMIT/,/END OMIT/
+.code examples/esc/sum.go /START OMIT/,/END OMIT/
+.caption examples/esc/sum.go
 
-Because the numbers slice is only referenced inside Sum, the compiler will arrange to store the 100 integers for that slice on the stack, rather than the heap. There is no need to garbage collect numbers, it is automatically freed when Sum returns.
+Because the numbers slice is only referenced inside Sum, the compiler will arrange to store the 100 integers for that slice on the stack, rather than the heap. There is no need to garbage collect `numbers`, it is automatically free'd when `Sum` returns.
 
 * Investigating escape analysis
+
+Prove it!
 
 To print the compilers escape analysis decisions, use the `-m` flag.
 
@@ -661,7 +663,9 @@ To print the compilers escape analysis decisions, use the `-m` flag.
  examples/esc/sum.go:25: Sum() escapes to heap
  examples/esc/sum.go:25: main ... argument does not escape
 
-TODO: explain
+Line 10 shows the compiler has correctly deduced that the result of `make([]int, 100)` does not escape to the heap.
+
+We'll come back to line 25 soon.
 
 * Escape analysis (example)
 
@@ -680,6 +684,7 @@ Even though c was allocated with the new function, it will not be stored on the 
 * Exercise
 
 - Write a benchmark to provide that `Sum` does not allocate
+- What is happening on line 25? Open up `examples/esc/sum.go` and see.
 - Change `Sum` to take `count` as a variable. Does that affect escape analysis? Why?
 
 * Inlining 
