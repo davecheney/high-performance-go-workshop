@@ -94,7 +94,7 @@ CPU dies can be made larger, but that increases latency, and cost per transistor
 
 Much of the improvement in performance in the last two decades has come from architectural improvements:
 
-- out of order execution (superscalar)
+- out of order execution (super-scalar)
 - speculative execution
 - vector (SSE) instructions
 
@@ -251,7 +251,7 @@ The `testing.B` structure tracks the number and size of allocations before and a
 
 The delta between these is divided by the size of `b.N` giving you an alloc count per iteration.
 
-Memory is allocated and tracked is an integer, this division suffers from rouding; you cannot allocate a ⅓ of a byte and you cannot do that ⅓ of a time. So non integer results _round_down_ according to the integer division rules in Go.
+Memory is allocated and tracked is an integer, this division suffers from rounding; you cannot allocate a ⅓ of a byte and you cannot do that ⅓ of a time. So non integer results _round_down_ according to the integer division rules in Go.
 
 * Watch out for compiler optimisations
 
