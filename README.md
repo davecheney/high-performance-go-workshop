@@ -16,7 +16,7 @@ This slide deck and supporting material is part of the [_High Performence Go_](h
 
 3. Run the present tool
  ```
- present high-performance-go-workshop
+ cd high-performance-go-workshop && present
  ```
 
 The slides will be available at [http://127.0.0.1:3999/](http://127.0.0.1:3999/)
