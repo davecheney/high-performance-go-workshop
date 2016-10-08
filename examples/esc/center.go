@@ -4,14 +4,10 @@ import "fmt"
 
 // START OMIT
 
-type Point struct {
-	X, Y int
-}
+type Point struct{ X, Y int }
 
-const (
-	Width  = 640
-	Height = 480
-)
+const Width = 640
+const Height = 480
 
 func Center(p *Point) {
 	p.X += Width / 2
