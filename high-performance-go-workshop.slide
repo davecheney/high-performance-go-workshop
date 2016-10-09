@@ -774,7 +774,7 @@ TODO: link to blog post about debug and release builds.
 Investigate the operation of the following compiler functions:
 
 - `-S` prints the (Go flavoured) assembly of the _package_ being compiled.
-- `-l` controls the behaviour of the inliner, `-l` disables inlining, `-l -l` increases it. Experiment with the difference.
+- `-l` controls the behaviour of the inliner, `-l` disables inlining, `-l`-l` increases it. Experiment with the difference.
 - `-m` controls printing of optimisation decision like inlining, escape analysis.
 - `-N` disables all optimisations.
 
