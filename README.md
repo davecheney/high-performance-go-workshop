@@ -21,6 +21,9 @@ This slide deck and supporting material is part of the [_High Performence Go_](h
 
 The slides will be available at [http://127.0.0.1:3999/high-performance-go-workshop.slide](http://127.0.0.1:3999/high-performance-go-workshop.slide#1)
 
+# Online
+You can view current version of slides at [https://go-talks.appspot.com/github.com/davecheney/high-performance-go-workshop/high-performance-go-workshop.slide#1](https://go-talks.appspot.com/github.com/davecheney/high-performance-go-workshop/high-performance-go-workshop.slide#1)
+
 # License and Materials
 
 This presentation is licensed under the [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/) licence.
