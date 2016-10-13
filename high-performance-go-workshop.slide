@@ -493,7 +493,7 @@ The Go runtime's profiling interface is in the `runtime/pprof` package.
 
 To make this easier, a few years ago I wrote a small package, [[https://github.com/pkg/profile][github.com/pkg/profile]], to make it easier to profile an application.
 
-     import "github.com/pkg/profile
+     import "github.com/pkg/profile"
 
      func main() {
            defer profile.Start().Stop()
