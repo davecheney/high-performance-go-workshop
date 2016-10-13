@@ -23,7 +23,7 @@ If you have suggestions or corrections to this presentation, please raise [[http
 
 This workshop is aimed at development teams who are building production Go applications intended for high scale deployment.
 
-Today we will going to cover five areas:
+Today we are going to cover five areas:
 
 - What does performance mean, what is possible?
 - Benchmarking
@@ -221,7 +221,7 @@ Determining the performance delta between two sets of benchmarks can be tedious 
 
 Tools like [[https://godoc.org/rsc.io/benchstat][rsc.io/benchstat]] are useful for comparing results.
 
- % go -test -c
+ % go test -c
  % mv fib.test fib.golden 
 
 DEMO: Improve `Fib`
@@ -1086,7 +1086,7 @@ Measure.
 
 If performance is good, _stop_. You don't need to optimise everything, only the hottest parts of your code.
 
-As you application grows, or your traffic pattern evolves, the performance hot spots will change.
+As your application grows, or your traffic pattern evolves, the performance hot spots will change.
 
 Don't leave complex code that is not performance critical, rewrite it with simpler operations if the bottleneck moves elsewhere.
 
