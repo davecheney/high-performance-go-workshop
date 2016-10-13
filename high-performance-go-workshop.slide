@@ -1,6 +1,6 @@
 High Performance Go
-Paris
-9 Oct 2016
+Amsterdam, NL
+12 Oct 2016
 
 Dave Cheney
 dave@cheney.net
@@ -16,6 +16,8 @@ The materials for this presentation are available on GitHub:
 .link https://github.com/davecheney/high-performance-go-workshop
 
 You are encouraged to remix, transform, or build upon the material, providing you give appropriate credit and distribute your contributions under the same license.
+
+If you have suggestions or corrections to this presentation, please raise [[https://github.com/davecheney/high-performance-go-workshop/isues][an issue on the GitHub project]].
 
 * Agenda
 
@@ -41,12 +43,6 @@ If you don't understand something, or think what you're hearing is incorrect, sp
 
 * What does performance mean?
 
-Before we start to talk about writing high performance code, we should establish an understanding of the current trends in computing hardware and outline the issues facing high performance software development.
-
-From these factors we can understand the areas where application performance can be won or lost.
-
-* The hardware
-
 Before we talk about writing high performance code, we need to talk about the hardware that will execute this code.
 
 What are its properties and how have they changed over time?
@@ -61,9 +57,9 @@ But this is all changing.
 
 .image images/cpu.svg _ 600
 
-Clock speeds have not increased in a decade.
+The number of transistors per CPU die continues to increase.
 
-The number of transistors per dollar has started to fall.
+However clock speeds have not increased in a decade, and transistors per dollar has started to fall.
 
 * More cores
 
@@ -145,17 +141,22 @@ Obviously the language I'm talking about is the one we're here to discuss: Go.
 
 * Discussion
 
+Discussion:
+
 - Do you agree that computers are no longer getting faster?
 
 - Do you think we need to change languages to take advantage of modern hardware?
 
-* Benchmarking
+Further reading
+
+.link https://www.youtube.com/watch?v=rKnDgT73v8s The Go Programming language (Nov 10, 2009)
+.link https://www.youtube.com/watch?v=5kj5ApnhPAE OSCON 2010: Rob Pike, "Public Static Void"
 
 * Benchmarking
 
-Before you can begin to tune your application, you must first know how to tell if your changes are making things better, or worse.
+* Benchmarking
 
-You must first establish a reliable baseline to measure the impact of your change.
+Before you can begin to tune your application, you need to establish a reliable baseline to measure the impact of your change to know if you're making things better, or worse.
 
 In other words, _"Don't_guess,_measure"_
 
@@ -181,8 +182,10 @@ For everyone else, have a before and after sample and run them multiple times to
 The `testing` package has built in support for writing benchmarks.
 
 .code examples/fib/fib_test.go /STARTFIB OMIT/,/ENDFIB OMIT/
+.caption fib.go
 
 .code examples/fib/fib_test.go /STARTBENCH OMIT/,/ENDBENCH OMIT/
+.caption fib_test.go
 
 DEMO: `go`test`-bench=.`./examples/fib`
 
@@ -192,14 +195,14 @@ Each benchmark is run `b.N` times until it takes longer than 1 second.
 
 `b.N` starts at 1, if the benchmark completes in under 1 second `b.N` is increased and the benchmark run again.
 
-`b.N` increases in the sequence, 1, 2, 5, 10, 20, 50, 100, ...
+`b.N` increases in the approximate sequence; 1, 2, 3, 5, 10, 20, 30, 50, 100, ...
 
  % go test -bench=. ./examples/fib
  BenchmarkFib-4             30000             46408 ns/op
  PASS
  ok      _/Users/dfc/devel/high-performance-go-workshop/examples/fib     1.910s
 
-Below the microsecond mark you will start to see the relativistic effects of code reordering and code alignment. 
+_Beware:_ below the μs mark you will start to see the relativistic effects of instruction reordering and code alignment. 
 
 - Run benchmarks longer to get more accuracy; `go`test`-benchtime=10s`
 - Run benchmarks multiple times; `go`test`-count=10`
@@ -218,22 +221,35 @@ Determining the performance delta between two sets of benchmarks can be tedious 
 
 Tools like [[https://godoc.org/rsc.io/benchstat][rsc.io/benchstat]] are useful for comparing results.
 
-        % go test -bench=. -count=5 > old.txt
+ % go -test -c
+ % mv fib.test fib.golden 
 
 DEMO: Improve `Fib`
 
-        % go test -bench=. -count=5 > new.txt
-        % benchstat old.txt new.txt
+ % go test -c
+ % ./fib.golden -test.bench=. -test.count=5 > old.txt
+ % ./fib.test -test.bench=. -test.count=5 > new.txt
+ % benchstat old.txt new.txt
 
 DEMO: `benchstat`{old,new}.txt`
+
+* Avoid benchmarking startup costs
+
+Sometimes your benchmark has a once per run setup cost. `b.ResetTimer()` will can be used to ignore the time accrued in setup.
+
+.code examples/reset.go /START1 OMIT/,/END1 OMIT/
+
+If you have some expensive setup logic _per_loop_iteration, use `b.StopTimer()` and `b.StartTimer()` to pause the benchmark timer.
+
+.code examples/reset.go /START2 OMIT/,/END2 OMIT/
 
 * Benchmarking allocations
 
 Allocation count and size is strongly correlated with benchmark time.
 
 You can tell the `testing` framework to record the number of allocations made by code under test with
-
- b.ReportAllocs()
+ 
+.code examples/benchmark.go
 
 DEMO: `go`test`-run=^$`-bench=.`bufio`
 
@@ -241,25 +257,11 @@ _Note:_ you can also use the `go`test`-benchmem` flag to do the same for _all_ b
 
 DEMO: `go`test`-run=^$`-bench=.`-benchmem`bufio`
 
-* Benchmarking allocations (cont.)
-
-How do `b.ReportAllocs()` and `-benchmem` work?
-
-The `testing.B` structure tracks the number and size of allocations before and after the benchmark.
-
-The delta between these is divided by the size of `b.N` giving you an alloc count per iteration.
-
-Memory is allocated and tracked is an integer, this division suffers from rounding; you cannot allocate a ⅓ of a byte and you cannot do that ⅓ times.
-
-Allocation results _round_down_ according to the integer division rules in Go.
-
 * Watch out for compiler optimisations
 
-How fast will this benchmark run ?
+This example comes from [[https://github.com/golang/go/issues/14813#issue-140603392][issue 14813]]. How fast will this function benchmark?
 
 .code examples/popcnt/popcnt_test.go /START OMIT/,/END OMIT/
-
-DEMO: `go`test`-bench=.`./examples/popcnt`
 
 * What happened?
 
@@ -289,13 +291,15 @@ Here are two incorrect benchmarks, can you explain what is wrong with them?
 
 Are there any questions?
 
+Perhaps it is time for a break.
+
 * Performance measurement and profiling
 
 * Performance measurement and profiling
 
 In the previous section we studied how to measure the performance of programs from the outside.
 
-In this section we'll use profiling tools to investigate the operation of the program from the inside.
+In this section we'll use profiling tools built into Go to investigate the operation of the program from the inside.
 
 * pprof
 
@@ -305,7 +309,7 @@ The primary tool we're going to be talking about today is _pprof_.
 
 `pprof` profiling is built into the Go runtime.
 
-It comes in two parts:
+It consists of two parts:
 
 - `runtime/pprof` package built into every Go program
 - `go`tool`pprof` for investigating profiles.
@@ -424,6 +428,8 @@ Opens a web page with a graphical display of the profile.
 
 .link images/profile.svg 
 
+_Note_: visualisation requires graphviz.
+
 I find this method to be superior to the text mode, I strongly recommend you try it.
 
 pprof also supports these modes in a non interactive form with flags like `-svg`, `-pdf`, etc. See `go`tool`pprof`-help` for more details.
@@ -433,19 +439,19 @@ pprof also supports these modes in a non interactive form with flags like `-svg`
 
 * Using pprof (cont.) 
 
-Let's cover the other two profile type.
-
-Here is a visualisation of a memory profile:
+The output of a memory profile can be similarly visualised.
 
     % go build -gcflags='-memprofile=/tmp/m.p'
     % go tool pprof --alloc_objects -svg $(go tool -n compile) /tmp/m.p > alloc_objects.svg
     % go tool pprof --inuse_objects -svg $(go tool -n compile) /tmp/m.p > inuse_objects.svg
 
+Memory profiles come in two varieties
+
 - Alloc objects reports the call site where each allocation was made
 
 .link images/alloc_objects.svg
 
-- Inuse objects reports the call site where an allocation was made if it was reachable at the end of the profile
+- Inuse objects reports the call site where an allocation was made _iff_ it was reachable at the end of the profile
 
 .link images/inuse_objects.svg
 
@@ -508,80 +514,13 @@ The frame pointer is a register that always points to the top of the current sta
 
 Framepointers enable tools like `gdb(1)`, and `perf(1)` to understand the Go call stack.
 
-* perf
+We won't cover these tools in this workshop, but you can read and watch a presentation I gave on seven different ways to profile Go programs.
 
-If you're a linux user, then `perf(1)` is a great tool for profiling applications. Now we have frame pointers, `perf` can profile Go applications.
+Further reading:
 
-        % go build -toolexec="perf stat" cmd/compile/internal/gc
-        # cmd/compile/internal/gc
-
-         Performance counter stats for '/home/dfc/go/pkg/tool/linux_amd64/compile -o $WORK/cmd/compile/internal/gc.a -trimpath $WORK -p cmd/compile/internal/gc -complete -buildid 87cd803267511b4d9e753d68b5b66a70e2f878c4 -D _/home/dfc/go/src/cmd/compile/internal/gc -I $WORK -pack ./alg.go ./align.go ./bexport.go ./bimport.go ./builtin.go ./bv.go ./cgen.go ./closure.go ./const.go ./cplx.go ./dcl.go ./esc.go ./export.go ./fmt.go ./gen.go ./go.go ./gsubr.go ./init.go ./inl.go ./lex.go ./magic.go ./main.go ./mpfloat.go ./mpint.go ./obj.go ./opnames.go ./order.go ./parser.go ./pgen.go ./plive.go ./popt.go ./racewalk.go ./range.go ./reflect.go ./reg.go ./select.go ./sinit.go ./sparselocatephifunctions.go ./ssa.go ./subr.go ./swt.go ./syntax.go ./type.go ./typecheck.go ./universe.go ./unsafe.go ./util.go ./walk.go':
-
-               7026.140760 task-clock (msec)         #    1.283 CPUs utilized
-                     1,665 context-switches          #    0.237 K/sec
-                        39 cpu-migrations            #    0.006 K/sec
-                    77,362 page-faults               #    0.011 M/sec
-            21,769,537,949 cycles                    #    3.098 GHz                     [83.41%]
-            11,671,235,864 stalled-cycles-frontend   #   53.61% frontend cycles idle    [83.31%]
-             6,839,727,058 stalled-cycles-backend    #   31.42% backend  cycles idle    [66.65%]
-            27,157,950,447 instructions              #    1.25  insns per cycle
-                                                     #    0.43  stalled cycles per insn [83.25%]
-             5,351,057,260 branches                  #  761.593 M/sec                   [83.49%]
-               118,150,150 branch-misses             #    2.21% of all branches         [83.15%]
-
-               5.476816754 seconds time elapsed
-
-* perf record
-
-        % go build -toolexec="perf record -g -o /tmp/p" cmd/compile/internal/gc
-        % perf report -i /tmp/p
-
-.image images/perf.png _ 800
-
-* Flame graphs
-
-.image images/cpu-mysql-updated.svg _ 500
-
-"The x-axis shows the stack profile population, sorted alphabetically (it is not the passage of time), and the y-axis shows stack depth. Each rectangle represents a stack frame. The wider a frame is is, the more often it was present in the stacks. The top edge shows what is on-CPU, and beneath it is its ancestry. The colors are usually not significant, picked randomly to differentiate frames."
-.caption http://www.brendangregg.com/flamegraphs.html
-
-- *x*axis*: alphabetical stack sort, to maximise merging.
-- *y*axis*: stack depth.
-
-* Flame graph interpretation (1/3)
-
-.image images/flamegraph1.png
-
-.caption http://www.slideshare.net/brendangregg/java-performance-analysis-on-linux-with-flame-graphs
-
-* Flame graph interpretation (2/3)
-
-.image images/flamegraph2.png
-
-.caption http://www.slideshare.net/brendangregg/java-performance-analysis-on-linux-with-flame-graphs
-
-* Flame graph interpretation (3/3)
-
-.image images/flamegraph3.png
-
-.caption http://www.slideshare.net/brendangregg/java-performance-analysis-on-linux-with-flame-graphs
-
-* Flame graphs (cont.)
-
-Flame graphs can consume data from many sources, including `pprof` (and `perf(1)`).
-
-Uber have open sourced a tool call go-torch which automates the process, assuming you have the `/debug/pprof` endpoint, or you can feed it an existing profile.
-
-.link https://github.com/uber/go-torch
-
-DEMO
-
-        % go build -gcflags=-cpuprofile=/tmp/c.p .
-        % go-torch $(go tool compile -n) /tmp/c.p
-        INFO[16:00:09] Run pprof command: go tool pprof -raw -seconds 30 /Users/dfc/go/pkg/tool/darwin_amd64/compile /tmp/c.p
-        INFO[16:00:09] Writing svg to torch.svg
-
-.link images/torch.svg
+.link talks.godoc.org/github.com/davecheney/presentations/seven.slide Seven ways to profile a Go program (slides)
+.link https://www.youtube.com/watch?v=2h_NFBFrciI Video (30 mins)
+.link https://www.bigmarker.com/remote-meetup-go/Seven-ways-to-profile-a-Go-program Recording (60 mins)
 
 * go tool trace
 
@@ -623,11 +562,7 @@ Bonus: [[https://github.com/pkg/profile/releases/tag/v1.2.0][`github.com/pkg/pro
 
 * Exercises
 
-Profile an application using one of:
-
-- `perf` (requires linux)
-- `go-uber`
-- `go`tool`trace`
+- Create a trace profile of your application using `go`tool`trace` and [[https://github.com/pkg/profile/releases/tag/v1.2.0][`github.com/pkg/profile`]].
 
 * Compiler optimisations
 
@@ -637,19 +572,19 @@ This section gives a brief background on three important optimisations that the 
 
 - Escape analysis
 - Inlining
-- Constant elimination
+- Dead code elimination
 
-These are all handled in the front end of the compiler, while the code is still in it's AST form; then the code is passed to the SSA compiler for further optimisation. 
+These are all handled in the front end of the compiler, while the code is still in its AST form; then the code is passed to the SSA compiler for further optimisation. 
 
 * Escape analysis
 
 A compliant Go implementation _could_ store every allocation on the heap, but that would put a lot of pressure on the gc.
 
-However, the stack exists as a cheap (no need to garbage collect things on the stack) place to store local variables.
+However, the stack exists as a cheap place to store local variables; there is no need to garbage collect things on the stack.
 
 In some languages, like C and C++, stack/heap allocation is manual, and a common cause of memory corruption bugs.
 
-In Go, the compiler automatically moves local values to the stack if they live beyond the lifetime of the function call. It is said that the value  _escapes_ to the heap.
+In Go, the compiler automatically moves local values to the heap if they live beyond the lifetime of the function call. It is said that the value  _escapes_ to the heap.
 
 But the compiler can also do the opposite, it can find things which would be assumed to be allocated on the heap, `new`, `make`, etc, and move them to stack.
 
@@ -706,7 +641,6 @@ Even though `c` was allocated with the new function, it will not be stored on th
 
 - Write a benchmark to provide that `Sum` does not allocate
 - What is happening on line 25? Open up `examples/esc/sum.go` and see.
-# - Change `Sum` to take `count` as a variable. Does that affect escape analysis? Why?
 
 * Inlining 
 
@@ -746,37 +680,46 @@ DEMO: `go`build`-gcflags="-m`-S"`examples/max/max.go`2>&1`|`less`
 - What happens if they are variables?
 - What happens if they are passing into `F()` as parameters?
 
-* Constant elimination
+* Dead code elimination
 
-Why did the compiled code change when `a` and `b` moved from constant to variable?
+Why is it importnat that `a` and `b` are constants?
 
 After inlining, this is what the compiler saw
 
 .play examples/max/max2.go /START OMIT/,/END OMIT/
 
 - The call to `Max` has been inlined.
-- If `a > b` then there is nothing to do, so the function returns. 
-- If `a < b` then the branch is false and we fall through to `panic`
+- If `a`>`b` then there is nothing to do, so the function returns. 
+- If `a`<`b` then the branch is false and we fall through to `panic`
 - But, because `a` and `b` are constants, we know that the branch will never be false, so the compiler can optimise `F()` to a return.
 
-* Constant elimination (cont.)
+* Dead code elimination (cont.)
 
-Constant elimination and deadcode elimination work together with inlining to reduce the amount of code generated by removing loops and branches that are proven unreachable.
+Dead code elimination work together with inlining to reduce the amount of code generated by removing loops and branches that are proven unreachable.
 
-You can take advantage of this to implement expensive debugging, and hide it behind `const debug = false` declarations.
+You can take advantage of this to implement expensive debugging, and hide it behind
+
+ const debug = false 
 
 Combined with build tags this can be very useful.
 
-TODO: link to blog post about debug and release builds.
+Further reading:
+
+.link http://dave.cheney.net/2014/09/28/using-build-to-switch-between-debug-and-release Using // +build to switch between debug and release builds
+.link http://dave.cheney.net/2013/10/12/how-to-use-conditional-compilation-with-the-go-build-tool How to use conditional compilation with the go build tool
 
 * Compiler flags Exercises
 
 Investigate the operation of the following compiler functions:
 
 - `-S` prints the (Go flavoured) assembly of the _package_ being compiled.
-- `-l` controls the behaviour of the inliner, `-l` disables inlining, `-l`-l` increases it. Experiment with the difference.
+- `-l` controls the behaviour of the inliner, `-l` disables inlining, `-l`-l` increases it (more `-l` 's increases the compiler's appitite for inlining code). Experiment with the difference in compile time, program size, and run time.
 - `-m` controls printing of optimisation decision like inlining, escape analysis.
-- `-N` disables all optimisations.
+- `-l`-N` disables all optimisations.
+
+.link http://go-talks.appspot.com/github.com/rakyll/talks/gcinspect/talk.slide#1 Further reading: Codegen Inspection by Jaana Burcu Dogan
+
+Perhaps we shall take a break now.
 
 * Memory management and GC tuning
 
@@ -790,6 +733,18 @@ Next to your choice of algorithms, memory consumption is the most important fact
 
 This section discusses the operation of the garbage collector, how to measure the memory usage of your program and strategies for lowering memory usage if garbage collector performance is a bottleneck.
 
+* Garbage collector world view
+
+The purpose of a garbage collector is to present the illusion that there is an infinite amount of memory available to the program.
+
+You may disagree with this statement, but this is the base assumption of how garbage collector designers think.
+
+# A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
+
+The Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
+
+The Go GC is designed for low latency servers and interactive applications.
+
 * Garbage collector design
 
 The design of the Go GC has changed over the years
@@ -799,23 +754,8 @@ The design of the Go GC has changed over the years
 - Go 1.5, new GC design, focusing on _latency_ over _throughput_.
 - Go 1.6, GC improvements, handling larger heaps with lower latency.
 - Go 1.7, small GC improvements, mainly refactoring.
-- Go 1.8, ROC collector 
+- Go 1.8, ROC collector is an experiment to extend the idea of escape analysis per goroutine.
 
-# TODO DESCRIBE ROC collector
-
-# TODO CHECK THESE DATES AND VERSIONS
-
-* Garbage collector world view
-
-The purpose of a garbage collector is to present the illusion that there is an infinite amount of memory available to the program.
-
-You may disagree with this statement, but this is the base assumption of how garbage collector designers think.
-
-A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
-
-The Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
-
-The Go GC is designed for low latency servers and interactive applications.
 
 * Garbage collector monitoring
 
@@ -884,12 +824,6 @@ The first Read method takes no arguments and returns some data as a `[]byte`. Th
 The first Read method will _always_ allocate a buffer, putting pressure on the GC. The second fills the buffer it was given.
 
 _Exercise_: Can you name examples in the std lib which follow this pattern?
-
-* Reduce allocations (cont.)
-
-In this example, `Conn.Loop` can run forever without generating garbage.
-
-.code examples/ioloop.go /START OMIT/,/END OMIT/
 
 * strings and []bytes
 
@@ -970,7 +904,7 @@ _Personal_opinion_: `sync.Pool` is hard to use safely. Don't use `sync.Pool`.
 
 * Exercises
 
-- Using `godoc` (or another program) observe the results of changing `GOGC`.
+- Using `godoc` (or another program) observe the results of changing `GOGC` using `GODEBUG=gctrace=1`.
 
 - Benchmark byte's string(byte) map keys
 
@@ -1155,9 +1089,9 @@ Don't leave complex code that is not performance critical, rewrite it with simpl
 "Readable means reliable"
 .caption Rob Pike
 
-I see little value in having a very fast server that panics, deadlocks or OOMs on a regular basis.
-
 Performance and reliability are equally important. 
+
+I see little value in having a very fast server that panics, deadlocks or OOMs on a regular basis.
 
 * In conclusion
 
