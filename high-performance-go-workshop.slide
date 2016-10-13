@@ -233,7 +233,7 @@ DEMO: Improve `Fib`
 
 DEMO: `benchstat`{old,new}.txt`
 
-* Avoid benchmarking startup costs
+* Avoid benchmarking start up costs
 
 Sometimes your benchmark has a once per run setup cost. `b.ResetTimer()` will can be used to ignore the time accrued in setup.
 
@@ -479,7 +479,7 @@ Using any of these flags also preserves the binary.
     % go test -run=XXX -bench=. -cpuprofile=c.p bytes
     % go tool pprof bytes.test c.p
 
-_Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks. You can also use `-run=^$` to acomplish the same thing.
+_Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks. You can also use `-run=^$` to accomplish the same thing.
 
 * Profiling applications
 
@@ -619,7 +619,7 @@ This example is a little contrived.
 
 .code  examples/esc/center.go /START OMIT/,/END OMIT/
 
-`CenterCursor` creates a new `Cursor` and stores a pointer to it in c. We pass `c` to the `Center()` function which moves the `Cursor` to the center of the screen. Finally we print the `X` and `Y` locations of that `Cursor`.
+`NewPoint` creates a new `*Point` value, `p`. We pass `p` to the `Center` function which moves the point to a position in the center of the screen. Finally we print the values of `p.X` and `p.Y`.
 
 * Escape analysis (example)
 
@@ -633,18 +633,23 @@ This example is a little contrived.
  examples/esc/center.go:18: NewPoint new(Point) does not escape
  examples/esc/center.go:20: NewPoint ... argument does not escape
 
-Even though `c` was allocated with the new function, it will not be stored on the heap, because no reference `c` escapes the `CenterCursor` function.
+Even though `p` was allocated with the `new` function, it will not be stored on the heap, because no reference `p` escapes the `Center` function.
+
+Question: What about line 20, if `p` doesn't escape, what is escaping to the heap?
+
+ examples/esc/center.go:20: p.X escapes to heap
+ examples/esc/center.go:20: p.Y escapes to heap
 
 .link https://github.com/golang/go/issues/7714 Escape analysis is not perfect
 
 * Exercise
 
-- Write a benchmark to provide that `Sum` does not allocate
 - What is happening on line 25? Open up `examples/esc/sum.go` and see.
+- Write a benchmark to provide that `Sum` does not allocate
 
 * Inlining 
 
-In Go function calls in have a fixed overhead; Stack check and Preemption check.
+In Go function calls in have a fixed overhead; stack and preemption check.
 
 Some of this is ameliorated by hardware branch predictors, but it's still a cost in terms of function size and clock cycles.
 
@@ -713,8 +718,8 @@ Further reading:
 Investigate the operation of the following compiler functions:
 
 - `-S` prints the (Go flavoured) assembly of the _package_ being compiled.
-- `-l` controls the behaviour of the inliner, `-l` disables inlining, `-l`-l` increases it (more `-l` 's increases the compiler's appitite for inlining code). Experiment with the difference in compile time, program size, and run time.
-- `-m` controls printing of optimisation decision like inlining, escape analysis.
+- `-l` controls the behaviour of the inliner; `-l` disables inlining, `-l`-l` increases it (more `-l` 's increases the compiler's appitite for inlining code). Experiment with the difference in compile time, program size, and run time.
+- `-m` controls printing of optimisation decision like inlining, escape analysis. `-m`-m` prints more details about what the compiler was thinking.
 - `-l`-N` disables all optimisations.
 
 .link http://go-talks.appspot.com/github.com/rakyll/talks/gcinspect/talk.slide#1 Further reading: Codegen Inspection by Jaana Burcu Dogan
@@ -741,21 +746,20 @@ You may disagree with this statement, but this is the base assumption of how gar
 
 # A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
 
-The Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
-
 The Go GC is designed for low latency servers and interactive applications.
+
+The Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
 
 * Garbage collector design
 
 The design of the Go GC has changed over the years
 
 - Go 1.0, stop the world mark sweep collector based heavily on tcmalloc.
-- Go 1.3, fully precise collector, wouldn't mistake big numbers on the heap for pointers.
+- Go 1.3, fully precise collector, wouldn't mistake big numbers on the heap for pointers, thus leaking memory.
 - Go 1.5, new GC design, focusing on _latency_ over _throughput_.
 - Go 1.6, GC improvements, handling larger heaps with lower latency.
 - Go 1.7, small GC improvements, mainly refactoring.
 - Go 1.8, ROC collector is an experiment to extend the idea of escape analysis per goroutine.
-
 
 * Garbage collector monitoring
 
@@ -763,14 +767,14 @@ A simple way to obtain a general idea of how hard the garbage collector is worki
 
 These stats are always collected, but normally suppressed, you can enable their display by setting the `GODEBUG` environment variable.
 
-	% env GODEBUG=gctrace=1 godoc -http=:8080
-	gc 1 @0.017s 8%: 0.021+3.2+0.10+0.15+0.86 ms clock, 0.043+3.2+0+2.2/0.002/0.009+1.7 ms cpu, 5->6->1 MB, 4 MB goal, 4 P
-	gc 2 @0.026s 12%: 0.11+4.9+0.12+1.6+0.54 ms clock, 0.23+4.9+0+3.0/0.50/0+1.0 ms cpu, 4->6->3 MB, 6 MB goal, 4 P
-	gc 3 @0.035s 14%: 0.031+3.3+0.76+0.17+0.28 ms clock, 0.093+3.3+0+2.7/0.012/0+0.84 ms cpu, 4->5->3 MB, 3 MB goal, 4 P
-	gc 4 @0.042s 17%: 0.067+5.1+0.15+0.29+0.95 ms clock, 0.20+5.1+0+3.0/0/0.070+2.8 ms cpu, 4->5->4 MB, 4 MB goal, 4 P
-	gc 5 @0.051s 21%: 0.029+5.6+0.33+0.62+1.5 ms clock, 0.11+5.6+0+3.3/0.006/0.002+6.0 ms cpu, 5->6->4 MB, 5 MB goal, 4 P
-	gc 6 @0.061s 23%: 0.080+7.6+0.17+0.22+0.45 ms clock, 0.32+7.6+0+5.4/0.001/0.11+1.8 ms cpu, 6->6->5 MB, 7 MB goal, 4 P
-	gc 7 @0.071s 25%: 0.59+5.9+0.017+0.15+0.96 ms clock, 2.3+5.9+0+3.8/0.004/0.042+3.8 ms cpu, 6->8->6 MB, 8 MB goal, 4 P
+ % env GODEBUG=gctrace=1 godoc -http=:8080
+ gc 1 @0.017s 8%: 0.021+3.2+0.10+0.15+0.86 ms clock, 0.043+3.2+0+2.2/0.002/0.009+1.7 ms cpu, 5->6->1 MB, 4 MB goal, 4 P
+ gc 2 @0.026s 12%: 0.11+4.9+0.12+1.6+0.54 ms clock, 0.23+4.9+0+3.0/0.50/0+1.0 ms cpu, 4->6->3 MB, 6 MB goal, 4 P
+ gc 3 @0.035s 14%: 0.031+3.3+0.76+0.17+0.28 ms clock, 0.093+3.3+0+2.7/0.012/0+0.84 ms cpu, 4->5->3 MB, 3 MB goal, 4 P
+ gc 4 @0.042s 17%: 0.067+5.1+0.15+0.29+0.95 ms clock, 0.20+5.1+0+3.0/0/0.070+2.8 ms cpu, 4->5->4 MB, 4 MB goal, 4 P
+ gc 5 @0.051s 21%: 0.029+5.6+0.33+0.62+1.5 ms clock, 0.11+5.6+0+3.3/0.006/0.002+6.0 ms cpu, 5->6->4 MB, 5 MB goal, 4 P
+ gc 6 @0.061s 23%: 0.080+7.6+0.17+0.22+0.45 ms clock, 0.32+7.6+0+5.4/0.001/0.11+1.8 ms cpu, 6->6->5 MB, 7 MB goal, 4 P
+ gc 7 @0.071s 25%: 0.59+5.9+0.017+0.15+0.96 ms clock, 2.3+5.9+0+3.8/0.004/0.042+3.8 ms cpu, 6->8->6 MB, 8 MB goal, 4 P
 
 The trace output gives a general measure of GC activity.
 
@@ -855,7 +859,12 @@ This will avoid the conversion of the byte slice to a string for the map lookup.
 
 Go strings are immutable. Concatenating two strings generates a third. Which of the following is fastest? 
 
-.code examples/concat/concat.go /START OMIT/,/END OMIT/
+.code examples/concat/concat_test.go /START1 OMIT/,/END1 OMIT/
+.code examples/concat/concat_test.go /START2 OMIT/,/END2 OMIT/
+.code examples/concat/concat_test.go /START3 OMIT/,/END3 OMIT/
+.code examples/concat/concat_test.go /START4 OMIT/,/END4 OMIT/
+
+DEMO: `go`test`-bench=.`./examples/concat`
 
 * Preallocate slices if the length is known
 
@@ -867,9 +876,9 @@ Slices grow by doubling up to 1024 elements, then by approximately 25% after tha
 
 If you use the append pattern you could be copying a lot of data and creating a lot of garbage.
 
-If know know the length of the slice beforehand, then pre-allocate the target to avoid copying and to make sure the target is exactly the right size. 
-
 * Preallocate slices if the length is known (cont.)
+
+If know know the length of the slice beforehand, then pre-allocate the target to avoid copying and to make sure the target is exactly the right size. 
 
 _Before:_
 
@@ -1015,7 +1024,7 @@ is equivalent to
 
 # talk about unwinding costs
 
-`defer` is expensive if the work being done is small, the classic example is `defer`ing a mutex unlock around a struct variable or map lookup. You may choose to avoid `defer` in those situations.
+`defer` is expensive if the work being done is small, the classic example is `defer` ing a mutex unlock around a struct variable or map lookup. You may choose to avoid `defer` in those situations.
 
 This is a case where readability and maintenance is sacrificed for a performance win. 
 
