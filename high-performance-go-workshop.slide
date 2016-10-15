@@ -687,7 +687,7 @@ DEMO: `go`build`-gcflags="-m`-S"`examples/max/max.go`2>&1`|`less`
 
 * Dead code elimination
 
-Why is it importnat that `a` and `b` are constants?
+Why is it important that `a` and `b` are constants?
 
 After inlining, this is what the compiler saw
 
@@ -718,7 +718,7 @@ Further reading:
 Investigate the operation of the following compiler functions:
 
 - `-S` prints the (Go flavoured) assembly of the _package_ being compiled.
-- `-l` controls the behaviour of the inliner; `-l` disables inlining, `-l`-l` increases it (more `-l` 's increases the compiler's appitite for inlining code). Experiment with the difference in compile time, program size, and run time.
+- `-l` controls the behaviour of the inliner; `-l` disables inlining, `-l`-l` increases it (more `-l` 's increases the compiler's appetite for inlining code). Experiment with the difference in compile time, program size, and run time.
 - `-m` controls printing of optimisation decision like inlining, escape analysis. `-m`-m` prints more details about what the compiler was thinking.
 - `-l`-N` disables all optimisations.
 
