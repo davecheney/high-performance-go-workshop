@@ -759,7 +759,8 @@ The design of the Go GC has changed over the years
 - Go 1.5, new GC design, focusing on _latency_ over _throughput_.
 - Go 1.6, GC improvements, handling larger heaps with lower latency.
 - Go 1.7, small GC improvements, mainly refactoring.
-- Go 1.8, ROC collector is an experiment to extend the idea of escape analysis per goroutine.
+- Go 1.8, further work to reduce STW times, now down to the 100 microsecond range.
+- Go 1.9, ROC collector is an experiment to extend the idea of escape analysis per goroutine.
 
 * Garbage collector monitoring
 
