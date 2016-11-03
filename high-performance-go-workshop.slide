@@ -1,6 +1,6 @@
 High Performance Go
-Amsterdam, NL
-12 Oct 2016
+Sydney
+3 Nov 2016
 
 Dave Cheney
 dave@cheney.net
@@ -209,8 +209,6 @@ _Beware:_ below the μs mark you will start to see the relativistic effects of i
 
 _Tip:_ If this is required, codify it in a `Makefile` so everyone is comparing apples to apples.
 
-# Setups costs usually amortized. Reset timer better than stop and start timer. 
-
 * Comparing benchmarks
 
 For repeatable results, you should run benchmarks multiple times.
@@ -247,7 +245,7 @@ If you have some expensive setup logic _per_loop_iteration, use `b.StopTimer()` 
 
 Allocation count and size is strongly correlated with benchmark time.
 
-You can tell the `testing` framework to record the number of allocations made by code under test with
+You can tell the `testing` framework to record the number of allocations made by code under test.
  
 .code examples/benchmark.go
 
@@ -341,8 +339,6 @@ Memory profiling, like CPU profiling is sample based, by default memory profilin
 Because of memory profiling is sample based and because it tracks _allocations_ not _use_, using memory profiling to determine your application's overall memory usage is difficult.
 
 _Personal_Opinion:_ I do not find memory profiling useful for finding memory leaks. There are better ways to determine how much memory your application is using. We will discuss these later in the presentation.
-
-# TODO: MAKE SURE YOU COVER MEMORY LEAKS LATER
 
 * Block profiling
 
