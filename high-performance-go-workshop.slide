@@ -1,6 +1,6 @@
 High Performance Go
-Sydney
-3 Nov 2016
+Tokyo 🌸
+4 Dec 2016
 
 Dave Cheney
 dave@cheney.net
@@ -37,7 +37,7 @@ After each section we'll have time for questions.
 
 This isn't a lecture, it's a conversation.
 
-If you don't understand something, or think what you're hearing is incorrect, speak up.
+If you don't understand something, or think what you're hearing is incorrect, please ask.
 
 * What does performance mean, what is possible?
 
@@ -536,25 +536,22 @@ Execution traces are essentially undocumented ☹️, see [[https://github.com/g
 
 * go tool trace (cont.)
 
-Generating a profile (with [[https://go-review.googlesource.com/#/c/25354/][CL 25354]] applied):
+Generating an execution trace
 
-        % go build -gcflags=-traceprofile=/tmp/t.p cmd/compile/internal/gc
+ % cd $(go env GOROOT)/test/bench/go1
+ % go test -bench=HTTPClientServer -trace=/tmp/t.p
 
 Viewing the trace:
 
-        % go tool trace /tmp/t.p
-        2016/08/13 17:01:04 Parsing trace...
-        2016/08/13 17:01:04 Serializing trace...
-        2016/08/13 17:01:05 Splitting trace...
-        2016/08/13 17:01:06 Opening browser
-
-DEMO:
-
-        go tool trace examples/t.p
+ % go tool trace /tmp/t.p
+ 2016/08/13 17:01:04 Parsing trace...
+ 2016/08/13 17:01:04 Serializing trace...
+ 2016/08/13 17:01:05 Splitting trace...
+ 2016/08/13 17:01:06 Opening browser
 
 Bonus: [[https://github.com/pkg/profile/releases/tag/v1.2.0][`github.com/pkg/profile`]] supports generating trace profiles.
 
-        defer profile.Start(profile.TraceProfile).Stop()
+ defer profile.Start(profile.TraceProfile).Stop()
 
 * Exercises
 
@@ -711,6 +708,10 @@ Further reading:
 
 * Compiler flags Exercises
 
+Compiler flags are provided with:
+
+ go build -gcflags=$FLAGS
+
 Investigate the operation of the following compiler functions:
 
 - `-S` prints the (Go flavoured) assembly of the _package_ being compiled.
@@ -776,6 +777,8 @@ These stats are always collected, but normally suppressed, you can enable their 
 The trace output gives a general measure of GC activity.
 
 DEMO: Show `godoc` with `GODEBUG=gctrace=1` enabled
+
+_Recommendation_: use this env var in production, it has no performance impact.
 
 * Garbage collector monitoring (cont.)
 
@@ -1075,17 +1078,29 @@ Any questions?
 
 * Conclusion
 
-* Always write the simplest code you can
+* Conclusion
+
+Always write the simplest code you can, the compiler is optimised for _normal_ code.
 
 Start with the simplest possible code.
 
-Measure.
+_Measure_.
 
 If performance is good, _stop_. You don't need to optimise everything, only the hottest parts of your code.
 
 As your application grows, or your traffic pattern evolves, the performance hot spots will change.
 
 Don't leave complex code that is not performance critical, rewrite it with simpler operations if the bottleneck moves elsewhere.
+
+* Conclusion (cont.)
+
+Profile your code to identify the bottlenecks, _do_not_guess_.
+
+Shorter code is faster code; Go is not C++, do not expect the compiler to unravel complicated abstractions.
+
+Shorter code is _smaller_ code; which is important for the CPU's cache.
+
+Pay very close attention to allocations, avoid unnecessary allocation where possible.
 
 * Don't trade performance for reliability
 
@@ -1097,19 +1112,6 @@ Don't leave complex code that is not performance critical, rewrite it with simpl
 
 Performance and reliability are equally important. 
 
-I see little value in having a very fast server that panics, deadlocks or OOMs on a regular basis.
+I see little value in making a very fast server that panics, deadlocks or OOMs on a regular basis.
 
-* In conclusion
-
-Profile your code to identify the bottlenecks, _do_not_guess_.
-
-Always write the simplest code you can, the compiler is optimised for _normal_ code.
-
-Shorter code is faster code; Go is not C++, do not expect the compiler to unravel complicated abstractions.
-
-Shorter code is _smaller_ code; which is important for the CPU's cache.
-
-Pay very close attention to allocations, avoid unnecessary allocation where possible.
-
-Don't trade performance for reliability.
-
+Don't trade performance for reliability
