@@ -514,7 +514,7 @@ We won't cover these tools in this workshop, but you can read and watch a presen
 
 Further reading:
 
-.link talks.godoc.org/github.com/davecheney/presentations/seven.slide Seven ways to profile a Go program (slides)
+.link https://talks.godoc.org/github.com/davecheney/presentations/seven.slide Seven ways to profile a Go program (slides)
 .link https://www.youtube.com/watch?v=2h_NFBFrciI Video (30 mins)
 .link https://www.bigmarker.com/remote-meetup-go/Seven-ways-to-profile-a-Go-program Recording (60 mins)
 
