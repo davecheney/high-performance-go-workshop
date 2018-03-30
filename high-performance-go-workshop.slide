@@ -25,11 +25,15 @@ This workshop is aimed at development teams who are building production Go appli
 
 Today we are going to cover five areas:
 
+- Introduction
+- [[01-profiling/profiling.slide][Performance measurement and profiling]]
+- [[02-benchmarking/benchmarking.slide][Benchmarking]]
+- [[03-compiler-optimisations/compiler-optimisations.slide][Compiler optimisations]]
+- [[04-execution-tracer/understanding-the-execution-tracer.slide][Understanding the execution tracer]]
 - What does performance mean, what is possible?
-- Benchmarking
-- Performance measurement and profiling
 - Memory management and GC tuning
 - Concurrency
+- Conclusion
 
 After each section we'll have time for questions.
 
