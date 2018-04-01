@@ -1,0 +1,145 @@
+Writing Go benchmarks
+Mercari
+11 Apr 2018
+
+Dave Cheney
+dave@cheney.net
+http://dave.cheney.net/
+@davecheney
+
+* Benchmarking
+
+Before you can begin to tune your application, you need to establish a reliable baseline to measure the impact of your change to know if you're making things better, or worse.
+
+In other words, _"Don't_guess,_measure"_
+
+This section focuses on how to construct useful benchmarks using the Go testing framework, and gives practical tips for avoiding the pitfalls.
+
+Benchmarking is closely related to profiling, which we'll touch on during this section, then cover it in detail in the next.
+
+* Benchmarking ground rules
+
+Before you benchmark, you must have a stable environment to get repeatable results.
+
+- The machine must be idle—don't profile on shared hardware, don't browse the web while waiting for a long benchmark to run.
+- Watch out for power saving and thermal scaling.
+- Avoid virtual machines and shared cloud hosting; they are too noisy for consistent measurements.
+- There is a kernel bug on OS X versions before El Capitan; upgrade or avoid profiling on OS X. This also affects other *BSDs.
+
+If you can afford it, buy dedicated performance test hardware. Rack it, disable all the power management and thermal scaling and never update the software on those machines.
+
+For everyone else, have a before and after sample and run them multiple times to get consistent results.
+
+* Using the testing package for benchmarking
+
+The `testing` package has built in support for writing benchmarks.
+
+.code examples/fib/fib_test.go /STARTFIB OMIT/,/ENDFIB OMIT/
+.caption fib.go
+
+.code examples/fib/fib_test.go /STARTBENCH OMIT/,/ENDBENCH OMIT/
+.caption fib_test.go
+
+DEMO: `go`test`-bench=.`./examples/fib`
+
+* How benchmarks work
+
+Each benchmark is run `b.N` times until it takes longer than 1 second.
+
+`b.N` starts at 1, if the benchmark completes in under 1 second `b.N` is increased and the benchmark run again.
+
+`b.N` increases in the approximate sequence; 1, 2, 3, 5, 10, 20, 30, 50, 100, ...
+
+ % go test -bench=. ./examples/fib
+ BenchmarkFib-4             30000             46408 ns/op
+ PASS
+ ok      _/Users/dfc/devel/high-performance-go-workshop/examples/fib     1.910s
+
+_Beware:_ below the μs mark you will start to see the relativistic effects of instruction reordering and code alignment. 
+
+- Run benchmarks longer to get more accuracy; `go`test`-benchtime=10s`
+- Run benchmarks multiple times; `go`test`-count=10`
+
+_Tip:_ If this is required, codify it in a `Makefile` so everyone is comparing apples to apples.
+
+* Comparing benchmarks
+
+For repeatable results, you should run benchmarks multiple times.
+
+You can do this manually, or use the `-count=` flag.
+
+Determining the performance delta between two sets of benchmarks can be tedious and error prone.
+
+Tools like [[https://godoc.org/rsc.io/benchstat][rsc.io/benchstat]] are useful for comparing results.
+
+ % go test -c
+ % mv fib.test fib.golden 
+
+DEMO: Improve `Fib`
+
+ % go test -c
+ % ./fib.golden -test.bench=. -test.count=5 > old.txt
+ % ./fib.test -test.bench=. -test.count=5 > new.txt
+ % benchstat old.txt new.txt
+
+DEMO: `benchstat`{old,new}.txt`
+
+* Avoid benchmarking start up costs
+
+Sometimes your benchmark has a once per run setup cost. `b.ResetTimer()` will can be used to ignore the time accrued in setup.
+
+.code examples/reset.go /START1 OMIT/,/END1 OMIT/
+
+If you have some expensive setup logic _per_loop_iteration, use `b.StopTimer()` and `b.StartTimer()` to pause the benchmark timer.
+
+.code examples/reset.go /START2 OMIT/,/END2 OMIT/
+
+* Benchmarking allocations
+
+Allocation count and size is strongly correlated with benchmark time.
+
+You can tell the `testing` framework to record the number of allocations made by code under test.
+ 
+.code examples/benchmark.go
+
+DEMO: `go`test`-run=^$`-bench=.`bufio`
+
+_Note:_ you can also use the `go`test`-benchmem` flag to do the same for _all_ benchmarks.
+
+DEMO: `go`test`-run=^$`-bench=.`-benchmem`bufio`
+
+* Watch out for compiler optimisations
+
+This example comes from [[https://github.com/golang/go/issues/14813#issue-140603392][issue 14813]]. How fast will this function benchmark?
+
+.code examples/popcnt/popcnt_test.go /START OMIT/,/END OMIT/
+
+* What happened?
+
+ % go test -bench=. ./examples/popcnt
+
+`popcnt` is a leaf function, so the compiler can inline it.
+
+Because the function is inlined, the compiler can see it has no side effects, so the call is eliminated. This is what the compiler sees:
+
+.code examples/popcnt/popcnt2_test.go /START OMIT/,/END OMIT/
+
+The same optimisations that make real code fast, by removing unnecessary computation, are the same ones that remove benchmarks that have no observable side effects.
+
+This is only going to get more common as the Go compiler improves.
+
+DEMO: show how to fix popcnt
+
+* Benchmark mistakes
+
+The `for` loop is crucial to the operation of the benchmark.
+
+Here are two incorrect benchmarks, can you explain what is wrong with them?
+
+.code examples/benchfib/wrong_test.go /START OMIT/,/END OMIT/
+
+* Discussion
+
+Are there any questions?
+
+Perhaps it is time for a break.

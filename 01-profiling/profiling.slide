@@ -1,4 +1,4 @@
-Profiling
+Performance Measurement and Profiling
 Mercari Tokyo
 11 Apr 2018
 
@@ -9,13 +9,11 @@ http://dave.cheney.net/
 
 * Performance measurement and profiling
 
-In the previous section we studied how to measure the performance of programs from the outside.
-
 In this section we'll use profiling tools built into Go to investigate the operation of the program from the inside.
 
 * pprof
 
-The primary tool we're going to be talking about today is _pprof_.
+The first tool we're going to be talking about today is _pprof_.
 
 [[https://github.com/google/pprof][pprof]] descends from the [[https://github.com/gperftools/gperftools][Google Perf Tools]] suite of tools.
 
@@ -31,6 +29,7 @@ pprof supports several types of profiling, we'll discuss three of these today:
 - CPU profiling.
 - Memory profiling.
 - Block (or blocking) profiling.
+- Mutex contention profiling.
 
 * CPU profiling
 
@@ -232,3 +231,6 @@ Further reading:
 .link https://www.youtube.com/watch?v=2h_NFBFrciI Video (30 mins)
 .link https://www.bigmarker.com/remote-meetup-go/Seven-ways-to-profile-a-Go-program Recording (60 mins)
 
+* Next
+
+[[../02-benchmarking/benchmarking.slide][Benchmarking]]
