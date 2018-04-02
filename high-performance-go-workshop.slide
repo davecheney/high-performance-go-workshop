@@ -19,6 +19,25 @@ You are encouraged to remix, transform, or build upon the material, providing yo
 
 If you have suggestions or corrections to this presentation, please raise [[https://github.com/davecheney/high-performance-go-workshop/issues][an issue on the GitHub project]].
 
+* Prerequisites
+
+- Go 1.10 installed on your laptop. Earlier versions of Go ship with earlier versions of the profiling and tracing tools, please make sure you have Go 1.10 or things won't make sense.
+- Graphviz. The pprof tool requires the `dot` program which ships with the `graphviz` suite of tools. 
+
+Linux: 
+
+ [sudo] apt-get install graphviz
+
+OSX:
+
+MacPorts:
+
+ sudo port install graphviz
+
+Homebrew:
+
+ brew install graphviz
+
 * Agenda
 
 This workshop is aimed at development teams who are building production Go applications intended for high scale deployment.
@@ -28,6 +47,7 @@ The plan is to work from profiling and benchmarking of functions to profiling an
 - Introduction
 - [[01-profiling/profiling.slide][Performance measurement and profiling]]
 - [[02-benchmarking/benchmarking.slide][Benchmarking]]
+- profile whole programs; github.com/pkg/profile
 - [[03-compiler-optimisations/compiler-optimisations.slide][Compiler optimisations]]
 - [[04-execution-tracer/understanding-the-execution-tracer.slide][Understanding the execution tracer]]
 - Memory management and GC tuning

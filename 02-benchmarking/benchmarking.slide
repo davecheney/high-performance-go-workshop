@@ -9,13 +9,13 @@ http://dave.cheney.net/
 
 * Benchmarking
 
-Before you can begin to tune your application, you need to establish a reliable baseline to measure the impact of your change to know if you're making things better, or worse.
+In the prevoius section we looked at profiling _whole_ programs which is useful for answering high level questions like:
 
-In other words, _"Don't_guess,_measure"_
+- "Why is this program taking so long to run"
+
+But sometimes you know where the problem is, and you want to isolate it so you can try to improve it.
 
 This section focuses on how to construct useful benchmarks using the Go testing framework, and gives practical tips for avoiding the pitfalls.
-
-Benchmarking is closely related to profiling, which we'll touch on during this section, then cover it in detail in the next.
 
 * Benchmarking ground rules
 
@@ -137,6 +137,21 @@ The `for` loop is crucial to the operation of the benchmark.
 Here are two incorrect benchmarks, can you explain what is wrong with them?
 
 .code examples/benchfib/wrong_test.go /START OMIT/,/END OMIT/
+
+* Profiling benchmarks
+
+The `testing` package has built in support for generating CPU, memory, and block profiles.
+
+- `-cpuprofile=$FILE` writes a CPU profile to `$FILE`.
+- `-memprofile=$FILE`, writes a memory profile to `$FILE`, `-memprofilerate=N` adjusts the profile rate to `1/N`.
+- `-blockprofile=$FILE`, writes a block profile to `$FILE`.
+
+Using any of these flags also preserves the binary.
+
+    % go test -run=XXX -bench=. -cpuprofile=c.p bytes
+    % go tool pprof bytes.test c.p
+
+_Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks. You can also use `-run=^$` to accomplish the same thing.
 
 * Discussion
 
