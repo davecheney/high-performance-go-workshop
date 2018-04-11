@@ -71,7 +71,11 @@ Block profiling is a very specialised tool, it should not be used until you beli
 
 * Mutex profiling
 
-TODO
+Mutex profiling is simlar to Block profiling, but is focused exclusively on operations that lead to delays caused by mutex contention.
+
+I don't have a lot of experience with this type of profile so I haven't been able to come up with a concise example to demonstrate it. 
+
+During one of the breaks I'm happy to go through what I know about the mutex proflie.
 
 * One profile at at time
 
@@ -85,7 +89,7 @@ If you enable multiple profile's at the same time, they will observe their own i
 
 *Do*not*enable*more*than*one*kind*of*profile*at*a*time.*
 
-* Profiling applications
+* Collecting a profile
 
 The Go runtime's profiling interface is in the `runtime/pprof` package.
 
@@ -100,6 +104,8 @@ A few years ago I wrote a small package, [[https://github.com/pkg/profile][githu
            ...
      }
 
+We'll use the profile package throughout this workshop, but feel free to ask me in a break to demonstrate how to use the `runtime/pprof` interface directly.
+
 * Using pprof
 
 Now that we've talked about what pprof can measure, and how to generate a profile, let's talk about how to use pprof to analyse a profile.
@@ -108,20 +114,28 @@ The analysis is driven by the `go`pprof` subtool
 
     go tool pprof /path/to/your/profile
 
-_Note_: Since Go 1.9 the profile file contains all the information needed to render the profile. You do no longer need the binary which produced the profile.
+_Note_: Since Go 1.9 the profile file contains all the information needed to render the profile. You do no longer need the binary which produced the profile. 🎉
 
 .link http://blog.golang.org/profiling-go-programs Further reading: Profiling Go programs
 .link https://software.intel.com/en-us/blogs/2014/05/10/debugging-performance-issues-in-go-programs Further reading: Debugging performance issues in Go programs
 
-* pprof (exercise)
+* CPU profiling (exercise)
 
-Let's write a program to count words
+Let's write a program to count words:
 
-examples/words
+ examples/words/main.go
 
-Let's see how many words there are in herman melville's classic moby dick
+Let's see how many words there are in herman melville's classic moby dick.
+
+ % go run main.go moby.txt 
+ "moby.txt": 181275 words
 
 Let's compare that to unix's `wc`-w`
+
+ % wc -w  moby.txt 
+  215829 moby.txt
+
+Let's investigate why these programs have different run times using pprof.
 
 * Using pprof (cont.) 
 
@@ -171,8 +185,18 @@ We won't cover these tools in this workshop, but you can read and watch a presen
 Further reading:
 
 .link https://talks.godoc.org/github.com/davecheney/presentations/seven.slide Seven ways to profile a Go program (slides)
-.link https://www.youtube.com/watch?v=2h_NFBFrciI Video (30 mins)
-.link https://www.bigmarker.com/remote-meetup-go/Seven-ways-to-profile-a-Go-program Recording (60 mins)
+.link https://www.youtube.com/watch?v=2h_NFBFrciI Seven ways to profile a Go program (video, 30 mins)
+.link https://www.bigmarker.com/remote-meetup-go/Seven-ways-to-profile-a-Go-program Seven ways to profile a Go program (webcast, 60 mins)
+
+* Exercise
+
+Add profiling to an application.
+
+If you don't have a piece of code that you are able to experiment on, you can use the source to godoc
+
+ % go get golang.org/x/tools/cmd/godoc
+ % cd $GOPATH/src/golang.org/x/tools/cmd/godoc
+ % vim main.go
 
 * Next
 

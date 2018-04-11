@@ -11,7 +11,7 @@ http://dave.cheney.net/
 
 In the prevoius section we looked at profiling _whole_ programs which is useful for answering high level questions like:
 
-- "Why is this program taking so long to run"
+"Why is this program taking so long to run"
 
 But sometimes you know where the problem is, and you want to isolate it so you can try to improve it.
 
@@ -24,7 +24,6 @@ Before you benchmark, you must have a stable environment to get repeatable resul
 - The machine must be idle—don't profile on shared hardware, don't browse the web while waiting for a long benchmark to run.
 - Watch out for power saving and thermal scaling.
 - Avoid virtual machines and shared cloud hosting; they are too noisy for consistent measurements.
-- There is a kernel bug on OS X versions before El Capitan; upgrade or avoid profiling on OS X. This also affects other *BSDs.
 
 If you can afford it, buy dedicated performance test hardware. Rack it, disable all the power management and thermal scaling and never update the software on those machines.
 
@@ -44,7 +43,7 @@ DEMO: `go`test`-bench=.`./examples/fib`
 
 * How benchmarks work
 
-Each benchmark is run `b.N` times until it takes longer than 1 second.
+Each benchmark is run `b.N` times until `b.N` iterations takes longer than 1 second.
 
 `b.N` starts at 1, if the benchmark completes in under 1 second `b.N` is increased and the benchmark run again.
 
@@ -57,32 +56,61 @@ Each benchmark is run `b.N` times until it takes longer than 1 second.
 
 _Beware:_ below the μs mark you will start to see the relativistic effects of instruction reordering and code alignment. 
 
-- Run benchmarks longer to get more accuracy; `go`test`-benchtime=10s`
-- Run benchmarks multiple times; `go`test`-count=10`
+* Improving benchmark accuracy
+
+You should aim for your benchmarks to run in the 10,000's of iterations.
+
+If your benchmark runs for 100's or 10's of iterations, the average of those runs may not be stable. Run benchmarks longer to get more accuracy; `go`test`-benchtime=10s`
+
+Also be aware that if you have a benchmark that runs in 10's of ns/op your benchmark may be less stable because of the effect of thermal scaling, memory locality, background processing, gc activity, etc.
+
+Small values are hard to measure accurately. To address this run benchmarks multiple times; `go`test`-count=10`
 
 _Tip:_ If this is required, codify it in a `Makefile` so everyone is comparing apples to apples.
 
+* Benchstat
+
+I'm going to introduce a tool by Russ Cox called [[https://godoc.org/golang.org/x/perf/cmd/benchstat][benchstat]].
+
+Benchstat can take a set of benchmark runs and tell you how stable they are:
+
+ % go get golang.org/x/perf/cmd/benchstat
+
+We can use it to see how stable our benchmark setup is
+
+ % cd examples/fib
+ % % go test -bench=. -count=10 | tee old.txt
+ % benchstat old.txt
+ name     time/op
+ Fib20-4  49.5µs ± 1%
+
 * Comparing benchmarks
 
-For repeatable results, you should run benchmarks multiple times.
-
-You can do this manually, or use the `-count=` flag.
-
-Determining the performance delta between two sets of benchmarks can be tedious and error prone.
-
-Tools like [[https://godoc.org/rsc.io/benchstat][rsc.io/benchstat]] are useful for comparing results.
+Determining the performance delta between two sets of benchmarks can be tedious and error prone. Benchstat can help us with this;
 
  % go test -c
  % mv fib.test fib.golden 
 
+_Tip:_ copy your _before_ test binary to a new file so you have a known reference program.
+
 DEMO: Improve `Fib`
 
  % go test -c
- % ./fib.golden -test.bench=. -test.count=5 > old.txt
- % ./fib.test -test.bench=. -test.count=5 > new.txt
+ % ./fib.golden -test.bench=. -test.count=10 > old.txt
+ % ./fib.test -test.bench=. -test.count=10 > new.txt
  % benchstat old.txt new.txt
+ name     old time/op  new time/op  delta
+ Fib20-4  49.5µs ± 1%  32.0µs ± 1%  -35.38%  (p=0.000 n=10+10)
 
 DEMO: `benchstat`{old,new}.txt`
+
+* Comparing benchmarks (cont.)
+
+There are three things to check when comparing benchmarks
+
+- The variance ± in the old and new times. 1-2% is good, 3-5% is ok, greater than 5% and some of your samples will be considered unreliable. Be careful when comparing benchmarks where one side has a high variance, you may not be seeing an improvement.
+- p value. p values lower than 0.05 are good, greater than 0.05 means the benchmark may not be statistically significant.
+- Missing samples. benchstat will report how many of the old and new samples it considered to be valid, sometimes you may find only, say, 9 reported, even though you did `-count=10`, a 10% of lower rejection rate is ok, higher than 10% may indicate your setup is unstable and you may be comparing too few samples.
 
 * Avoid benchmarking start up costs
 
@@ -158,3 +186,7 @@ _Note:_ use `-run=XXX` to disable tests, you only want to profile benchmarks. Yo
 Are there any questions?
 
 Perhaps it is time for a break.
+
+* Next
+
+[[../03-compiler-optimisations/compiler-optimisations.slide][Compiler optimisations]]

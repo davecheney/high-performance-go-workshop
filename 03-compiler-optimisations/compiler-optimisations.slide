@@ -17,9 +17,13 @@ This section gives a brief background on three important optimisations that the 
 
 These are all handled in the front end of the compiler, while the code is still in its AST form; then the code is passed to the SSA compiler for further optimisation. 
 
-* Compiler background
+* History of the Go compiler
 
-The Go compiler started as a fork of the 
+The Go compiler started as a fork of the Plan9 compiler tool chain ~ 2007.
+
+In Go 1.5 the compiler was mechanically translated into Go.
+
+In Go 1.7 the 'back end' of the compiler was rewritten from the Plan9 style code generation to a new form using [[https://en.wikipedia.org/wiki/Static_single_assignment_form][SSA]] techniques.
 
 * Escape analysis
 
@@ -62,7 +66,7 @@ We'll come back to line 25 soon.
 
 This example is a little contrived.
 
-.code  examples/esc/center.go /START OMIT/,/END OMIT/
+.code examples/esc/center.go /START OMIT/,/END OMIT/
 
 `NewPoint` creates a new `*Point` value, `p`. We pass `p` to the `Center` function which moves the point to a position in the center of the screen. Finally we print the values of `p.X` and `p.Y`.
 
@@ -130,6 +134,16 @@ DEMO: `go`build`-gcflags="-m`-S"`examples/max/max.go`2>&1`|`less`
 - What happens if they are variables?
 - What happens if they are passing into `F()` as parameters?
 
+* Inlining future
+
+A lot of what we've discussed with respect to leaf functions _may_ change in a future release of Go.
+
+There has been work going on in the background since Go 1.8 to enable, so called, mid-stack inlining.
+
+As a Go programmer, this should not be a cause for alarm, mid-
+
+.link https://github.com/golang/proposal/blob/master/design/19348-midstack-inlining.md Proposal: Mid-stack inlining in the Go compiler
+
 * Dead code elimination
 
 Why is it important that `a` and `b` are constants?
@@ -172,3 +186,7 @@ Investigate the operation of the following compiler functions:
 - `-l`-N` disables all optimisations.
 
 .link http://go-talks.appspot.com/github.com/rakyll/talks/gcinspect/talk.slide#1 Further reading: Codegen Inspection by Jaana Burcu Dogan
+
+* Next
+
+[[../04-execution-tracer/understanding-the-execution-tracer.slide][Understanding the execution tracer]]

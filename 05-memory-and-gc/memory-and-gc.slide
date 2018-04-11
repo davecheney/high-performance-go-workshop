@@ -1,0 +1,202 @@
+Memory and Garbage Collector
+Mercari
+11 Apr 2011
+
+Dave Cheney
+dave@cheney.net
+http://dave.cheney.net/
+@davecheney
+
+* Memory and Garbage Collector
+
+Go is a garbage collected language. This is a design principle, it will not change.
+
+As a garbage collected language, the performance of Go programs is often determined by their interaction with the garbage collector.
+
+Next to your choice of algorithms, memory consumption is the most important factor that determines the performance and scalability of your application.
+
+This section discusses the operation of the garbage collector, how to measure the memory usage of your program and strategies for lowering memory usage if garbage collector performance is a bottleneck.
+
+* Garbage collector world view
+
+The purpose of a garbage collector is to present the illusion that there is an infinite amount of memory available to the program.
+
+You may disagree with this statement, but this is the base assumption of how garbage collector designers think.
+
+# A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
+
+The Go GC is designed for low latency servers and interactive applications.
+
+The Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
+
+* Garbage collector design
+
+The design of the Go GC has changed over the years
+
+- Go 1.0, stop the world mark sweep collector based heavily on tcmalloc.
+- Go 1.3, fully precise collector, wouldn't mistake big numbers on the heap for pointers, thus leaking memory.
+- Go 1.5, new GC design, focusing on _latency_ over _throughput_.
+- Go 1.6, GC improvements, handling larger heaps with lower latency.
+- Go 1.7, small GC improvements, mainly refactoring.
+- Go 1.8, further work to reduce STW times, now down to the 100 microsecond range.
+- Go 1.9, ROC collector is an experiment to extend the idea of escape analysis per goroutine.
+
+* Garbage collector monitoring
+
+A simple way to obtain a general idea of how hard the garbage collector is working is to enable the output of GC logging.
+
+These stats are always collected, but normally suppressed, you can enable their display by setting the `GODEBUG` environment variable.
+
+ % env GODEBUG=gctrace=1 godoc -http=:8080
+ gc 1 @0.017s 8%: 0.021+3.2+0.10+0.15+0.86 ms clock, 0.043+3.2+0+2.2/0.002/0.009+1.7 ms cpu, 5->6->1 MB, 4 MB goal, 4 P
+ gc 2 @0.026s 12%: 0.11+4.9+0.12+1.6+0.54 ms clock, 0.23+4.9+0+3.0/0.50/0+1.0 ms cpu, 4->6->3 MB, 6 MB goal, 4 P
+ gc 3 @0.035s 14%: 0.031+3.3+0.76+0.17+0.28 ms clock, 0.093+3.3+0+2.7/0.012/0+0.84 ms cpu, 4->5->3 MB, 3 MB goal, 4 P
+ gc 4 @0.042s 17%: 0.067+5.1+0.15+0.29+0.95 ms clock, 0.20+5.1+0+3.0/0/0.070+2.8 ms cpu, 4->5->4 MB, 4 MB goal, 4 P
+ gc 5 @0.051s 21%: 0.029+5.6+0.33+0.62+1.5 ms clock, 0.11+5.6+0+3.3/0.006/0.002+6.0 ms cpu, 5->6->4 MB, 5 MB goal, 4 P
+ gc 6 @0.061s 23%: 0.080+7.6+0.17+0.22+0.45 ms clock, 0.32+7.6+0+5.4/0.001/0.11+1.8 ms cpu, 6->6->5 MB, 7 MB goal, 4 P
+ gc 7 @0.071s 25%: 0.59+5.9+0.017+0.15+0.96 ms clock, 2.3+5.9+0+3.8/0.004/0.042+3.8 ms cpu, 6->8->6 MB, 8 MB goal, 4 P
+
+The trace output gives a general measure of GC activity.
+
+DEMO: Show `godoc` with `GODEBUG=gctrace=1` enabled
+
+_Recommendation_: use this env var in production, it has no performance impact.
+
+* Garbage collector monitoring (cont.)
+
+Using `GODEBUG=gctrace=1` is good when you _know_ there is a problem, but for general telemetry on your Go application I recommend the `net/http/pprof` interface.
+
+    import _ "net/http/pprof"
+
+Importing the `net/http/pprof` package will register a handler at `/debug/pprof` with various runtime metrics, including:
+
+- A list of all the running goroutines, `/debug/pprof/heap?debug=1`. 
+- A report on the memory allocation statistics, `/debug/pprof/heap?debug=1`.
+
+*Warning*: `net/http/pprof` will register itself with your default `http.ServeMux`.
+
+Be careful as this will be visible if you use `http.ListenAndServe(address,`nil)`.
+
+DEMO: `godoc`-http=:8080`, show `/debug/pprof`.
+
+* Garbage collector tuning
+
+The Go runtime provides one environment variable to tune the GC, `GOGC`.
+
+The formula for GOGC is as follows.
+
+    goal = reachable * (1 + GOGC/100)
+
+For example, if we currently have a 256MB heap, and `GOGC=100` (the default), when the heap fills up it will grow to
+
+    512MB = 256MB * (1 + 100/100)
+
+- Values of `GOGC` greater than 100 causes the heap to grow faster, reducing the pressure on the GC.
+- Values of `GOGC` less than 100 cause the heap to grow slowly, increasing the pressure on the GC.
+
+The default value of 100 is _just_a_guide_. you should choose your own value _after_profiling_your_application_with_production_loads_.
+
+* Reduce allocations
+
+Make sure your APIs allow the caller to reduce the amount of garbage generated.
+
+Consider these two Read methods
+
+    func (r *Reader) Read() ([]byte, error)
+    func (r *Reader) Read(buf []byte) (int, error)
+
+The first Read method takes no arguments and returns some data as a `[]byte`. The second takes a `[]byte` buffer and returns the amount of bytes read.
+
+The first Read method will _always_ allocate a buffer, putting pressure on the GC. The second fills the buffer it was given.
+
+_Exercise_: Can you name examples in the std lib which follow this pattern?
+
+* strings and []bytes
+
+In Go `string` values are immutable, `[]byte` are mutable.
+
+Most programs prefer to work `string`, but most IO is done with `[]byte`.
+
+Avoid `[]byte` to string conversions wherever possible, this normally means picking one representation, either a `string` or a `[]byte` for a value. Often this will be `[]byte` if you read the data from the network or disk.
+
+The [[https://golang.org/pkg/bytes/][`bytes`]] package contains many of the same operations— `Split`, `Compare`, `HasPrefix`, `Trim`, etc—as the [[https://golang.org/pkg/strings/][`strings`]] package.
+
+Under the hood `strings` uses same assembly primitives as the `bytes` package.
+
+* Using []byte as a map key
+
+It is very common to use a `string` as a map key, but often you have a `[]byte`.
+
+The compiler implements a specific optimisation for this case
+
+     var m map[string]string
+     v, ok := m[string(bytes)]
+
+This will avoid the conversion of the byte slice to a string for the map lookup. This is very specific, it won't work if you do something like
+
+     key := string(bytes)
+     val, ok := m[key] 
+
+* Avoid string concatenation
+
+Go strings are immutable. Concatenating two strings generates a third. Which of the following is fastest? 
+
+.code examples/concat/concat_test.go /START1 OMIT/,/END1 OMIT/
+.code examples/concat/concat_test.go /START2 OMIT/,/END2 OMIT/
+.code examples/concat/concat_test.go /START3 OMIT/,/END3 OMIT/
+.code examples/concat/concat_test.go /START4 OMIT/,/END4 OMIT/
+
+DEMO: `go`test`-bench=.`./examples/concat`
+
+* Preallocate slices if the length is known
+
+Append is convenient, but wasteful.
+
+Slices grow by doubling up to 1024 elements, then by approximately 25% after that. What is the capacity of `b` after we append one more item to it?
+
+.play examples/grow.go /START OMIT/,/END OMIT/
+
+If you use the append pattern you could be copying a lot of data and creating a lot of garbage.
+
+* Preallocate slices if the length is known (cont.)
+
+If know know the length of the slice beforehand, then pre-allocate the target to avoid copying and to make sure the target is exactly the right size. 
+
+_Before:_
+
+     var s []string
+     for _, v := range fn() {
+            s = append(s, v)
+     }
+     return s
+
+_After:_
+
+     vals := fn()
+     s := make([]string, len(vals))
+     for i, v := range vals {
+            s[i] = v           
+     }
+     return s
+
+* Using sync.Pool
+
+The `sync` package comes with a `sync.Pool` type which is used to reuse common objects.
+
+`sync.Pool` has no fixed size or maximum capacity. You add to it and take from it until a GC happens, then it is emptied unconditionally. 
+
+.code examples/pool.go /START OMIT/,/END OMIT/
+
+*Warning*: `sync.Pool` is not a cache. It can and will be emptied _at_any_time_.
+
+Do not place important items in a `sync.Pool`, they will be discarded.
+
+_Personal_opinion_: `sync.Pool` is hard to use safely. Don't use `sync.Pool`.
+
+* Exercises
+
+- Using `godoc` (or another program) observe the results of changing `GOGC` using `GODEBUG=gctrace=1`.
+
+- Benchmark byte's string(byte) map keys
+
+- Benchmark allocs from different concat strategies.
