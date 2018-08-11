@@ -1,28 +1,36 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/pkg/profile"
 )
 
+// aapated from https://commandercoriander.net/blog/2018/04/10/dont-lock-around-io/
+
+const payloadBytes = 1024 * 1024
+
+var (
+	mu    sync.Mutex
+	count int
+)
+
 func main() {
 	defer profile.Start(profile.MutexProfile).Stop()
+	http.HandleFunc("/", root)
+	http.ListenAndServe(":9999", nil)
+}
 
-	var mu sync.Mutex
-	var items = make(map[int]struct{})
+func root(w http.ResponseWriter, r *http.Request) {
 
-	const N = 1000 * 1000
-	var wg sync.WaitGroup
-	wg.Add(N)
-	for i := 0; i < N; i++ {
-		go func(i int) {
-			defer wg.Done()
-			mu.Lock()
-			defer mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 
-			items[i] = struct{}{}
-		}(i)
-	}
-	wg.Wait()
+	count++
+
+	msg := []byte(strings.Repeat(fmt.Sprintf("%d", count), payloadBytes))
+	w.Write(msg)
 }

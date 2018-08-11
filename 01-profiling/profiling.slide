@@ -73,9 +73,7 @@ Block profiling is a very specialised tool, it should not be used until you beli
 
 Mutex profiling is simlar to Block profiling, but is focused exclusively on operations that lead to delays caused by mutex contention.
 
-I don't have a lot of experience with this type of profile so I haven't been able to come up with a concise example to demonstrate it. 
-
-During one of the breaks I'm happy to go through what I know about the mutex proflie.
+I don't have a lot of experience with this type of profile but I have built an example to demonstrate it. We'll look at that example shortly.
 
 * One profile at at time
 

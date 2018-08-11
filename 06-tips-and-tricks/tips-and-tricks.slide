@@ -101,6 +101,18 @@ Always revisit these decisions.
 
 .link https://github.com/golang/go/issues/9704#issuecomment-251003577
 
+* Avoid Finalisers
+
+Finalisation is a technique to attach behaviour to an object which is just about to be garbage collected.
+
+Thus, finalisation is non deterministic. 
+
+For a finaliser to run, the object must not be reachable by _anything_. If you accidentally keep a reference to the object in the map, it won't be finalised.
+
+Finalisers run as part of the gc cycle, which means it is unpredictable when they will run and puts them at odds with the goal of reducing gc operation.
+
+A finaliser may not run for a long time if you have a large heap and have tuned your appliation to create minimal garbage.
+
 * Minimise cgo
 
 cgo allows Go programs to call into C libraries. 
