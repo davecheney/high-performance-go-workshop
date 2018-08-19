@@ -263,7 +263,7 @@ So the runtime was basically the same. There was more user time, which makes sen
 
 Let's look a the trace.
 
-* Using more than on CPU (cont.)
+* Using more than one CPU (cont.)
 
 As you can see this trace generated _much_ more data.
 
