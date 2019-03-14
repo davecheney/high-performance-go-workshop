@@ -1,13 +1,4 @@
-Memory and Garbage Collector
-Mercari
-11 Apr 2011
-
-Dave Cheney
-dave@cheney.net
-http://dave.cheney.net/
-@davecheney
-
-* Memory and Garbage Collector
+== Memory and Garbage Collector
 
 Go is a garbage collected language. This is a design principle, it will not change.
 
@@ -17,7 +8,7 @@ Next to your choice of algorithms, memory consumption is the most important fact
 
 This section discusses the operation of the garbage collector, how to measure the memory usage of your program and strategies for lowering memory usage if garbage collector performance is a bottleneck.
 
-* Garbage collector world view
+=== Garbage collector world view
 
 The purpose of a garbage collector is to present the illusion that there is an infinite amount of memory available to the program.
 
@@ -29,7 +20,7 @@ The Go GC is designed for low latency servers and interactive applications.
 
 The Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
 
-* Garbage collector design
+=== Garbage collector design
 
 The design of the Go GC has changed over the years
 
@@ -41,7 +32,7 @@ The design of the Go GC has changed over the years
 - Go 1.8, further work to reduce STW times, now down to the 100 microsecond range.
 - Go 1.9, ROC collector is an experiment to extend the idea of escape analysis per goroutine.
 
-* Garbage collector monitoring
+=== Garbage collector monitoring
 
 A simple way to obtain a general idea of how hard the garbage collector is working is to enable the output of GC logging.
 
@@ -62,48 +53,46 @@ DEMO: Show `godoc` with `GODEBUG=gctrace=1` enabled
 
 _Recommendation_: use this env var in production, it has no performance impact.
 
-* Garbage collector monitoring (cont.)
-
 Using `GODEBUG=gctrace=1` is good when you _know_ there is a problem, but for general telemetry on your Go application I recommend the `net/http/pprof` interface.
 
-    import _ "net/http/pprof"
+ import _ "net/http/pprof"
 
 Importing the `net/http/pprof` package will register a handler at `/debug/pprof` with various runtime metrics, including:
 
 - A list of all the running goroutines, `/debug/pprof/heap?debug=1`. 
 - A report on the memory allocation statistics, `/debug/pprof/heap?debug=1`.
 
-*Warning*: `net/http/pprof` will register itself with your default `http.ServeMux`.
+WARNING: `net/http/pprof` will register itself with your default `http.ServeMux`.
 
 Be careful as this will be visible if you use `http.ListenAndServe(address,`nil)`.
 
 DEMO: `godoc`-http=:8080`, show `/debug/pprof`.
 
-* Garbage collector tuning
+=== Garbage collector tuning
 
 The Go runtime provides one environment variable to tune the GC, `GOGC`.
 
 The formula for GOGC is as follows.
 
-    goal = reachable * (1 + GOGC/100)
+ goal = reachable * (1 + GOGC/100)
 
 For example, if we currently have a 256MB heap, and `GOGC=100` (the default), when the heap fills up it will grow to
 
-    512MB = 256MB * (1 + 100/100)
+ 512MB = 256MB * (1 + 100/100)
 
 - Values of `GOGC` greater than 100 causes the heap to grow faster, reducing the pressure on the GC.
 - Values of `GOGC` less than 100 cause the heap to grow slowly, increasing the pressure on the GC.
 
-The default value of 100 is _just_a_guide_. you should choose your own value _after_profiling_your_application_with_production_loads_.
+The default value of 100 is _just_a_guide_. you should choose your own value _after profiling your application with production loads_.
 
-* Reduce allocations
+=== Reduce allocations
 
 Make sure your APIs allow the caller to reduce the amount of garbage generated.
 
 Consider these two Read methods
 
-    func (r *Reader) Read() ([]byte, error)
-    func (r *Reader) Read(buf []byte) (int, error)
+ func (r *Reader) Read() ([]byte, error)
+ func (r *Reader) Read(buf []byte) (int, error)
 
 The first Read method takes no arguments and returns some data as a `[]byte`. The second takes a `[]byte` buffer and returns the amount of bytes read.
 
@@ -111,7 +100,7 @@ The first Read method will _always_ allocate a buffer, putting pressure on the G
 
 _Exercise_: Can you name examples in the std lib which follow this pattern?
 
-* strings and []bytes
+=== ++strings++ and ++[]byte++s
 
 In Go `string` values are immutable, `[]byte` are mutable.
 
@@ -123,21 +112,21 @@ The [[https://golang.org/pkg/bytes/][`bytes`]] package contains many of the same
 
 Under the hood `strings` uses same assembly primitives as the `bytes` package.
 
-* Using []byte as a map key
+=== Using `[]byte` as a map key
 
 It is very common to use a `string` as a map key, but often you have a `[]byte`.
 
 The compiler implements a specific optimisation for this case
 
-     var m map[string]string
-     v, ok := m[string(bytes)]
+ var m map[string]string
+ v, ok := m[string(bytes)]
 
 This will avoid the conversion of the byte slice to a string for the map lookup. This is very specific, it won't work if you do something like
 
-     key := string(bytes)
-     val, ok := m[key] 
+ key := string(bytes)
+ val, ok := m[key] 
 
-* Avoid string concatenation
+=== Avoid string concatenation
 
 Go strings are immutable. Concatenating two strings generates a third. Which of the following is fastest? 
 
@@ -148,7 +137,7 @@ Go strings are immutable. Concatenating two strings generates a third. Which of 
 
 DEMO: `go`test`-bench=.`./examples/concat`
 
-* Preallocate slices if the length is known
+=== Preallocate slices if the length is known
 
 Append is convenient, but wasteful.
 
@@ -157,8 +146,6 @@ Slices grow by doubling up to 1024 elements, then by approximately 25% after tha
 .play examples/grow.go /START OMIT/,/END OMIT/
 
 If you use the append pattern you could be copying a lot of data and creating a lot of garbage.
-
-* Preallocate slices if the length is known (cont.)
 
 If know know the length of the slice beforehand, then pre-allocate the target to avoid copying and to make sure the target is exactly the right size. 
 
@@ -179,7 +166,7 @@ _After:_
      }
      return s
 
-* Using sync.Pool
+=== Using sync.Pool
 
 The `sync` package comes with a `sync.Pool` type which is used to reuse common objects.
 
@@ -193,7 +180,7 @@ Do not place important items in a `sync.Pool`, they will be discarded.
 
 _Personal_opinion_: `sync.Pool` is hard to use safely. Don't use `sync.Pool`.
 
-* Exercises
+=== Exercises
 
 - Using `godoc` (or another program) observe the results of changing `GOGC` using `GODEBUG=gctrace=1`.
 
