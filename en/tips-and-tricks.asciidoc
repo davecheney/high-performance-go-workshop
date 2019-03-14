@@ -1,13 +1,7 @@
-Tips and Tricks
-Mercari
-11 Apr 2018
+== Tips and trips
+A random grab back of tips and suggestions
 
-Dave Cheney
-dave@cheney.net
-http://dave.cheney.net/
-@davecheney
-
-* Tips and Tricks
+=== Tips and Tricks
 
 This final section contains a number of tips to micro optimise Go code.
 
@@ -23,7 +17,7 @@ However, each goroutine does consume a minimum amount of memory for the goroutin
 
 # Maybe this is a lot, maybe it isn't given the other usages of your application
 
-* Know when to stop a goroutine
+=== Know when to stop a goroutine
 
 Goroutines are cheap to start and cheap to run, but they do have a finite cost in terms of memory footprint; you cannot create an infinite number of them.
 
@@ -33,12 +27,12 @@ If you don't know the answer, that's a potential memory leak.
 
 In your design, some goroutines may run until the program exits. These goroutines are rare enough to not become an exception to the rule.
 
-*Never*start*a*goroutine*without*knowing*how*it*will*stop*.
+TIP: Never start a goroutine without knowing how it will stop.
 
 .link https://www.youtube.com/watch?v=yKQOunhhf4A&index=16&list=PLq2Nv-Sh8EbZEjZdPLaQt1qh_ohZFMDj8 Concurrency Made Easy (video)
 .link https://dave.cheney.net/paste/concurrency-made-easy.pdf Concurrency Made Easy (slides)
 
-* Go uses efficient network polling for some requests
+=== Go uses efficient network polling for some requests
 
 The Go runtime handles network IO using an efficient operating system polling mechanism (kqueue, epoll, windows IOCP, etc). Many waiting goroutines will be serviced by a single operating system thread.
 
@@ -48,7 +42,7 @@ Heavy use of local file IO can cause your program to spawn hundreds or thousands
 
 Your disk subsystem does not expect to be able to handle hundreds or thousands of concurrent IO requests.
 
-* Watch out for IO multipliers in your application
+=== Watch out for IO multipliers in your application
 
 If you're writing a server process, its primary job is to multiplex clients connected over the network, and data stored in your application.
 
@@ -59,7 +53,7 @@ Most server programs take a request, do some processing, then return a result. T
 
 If memory is slow, relatively speaking, then IO is so slow that you should avoid doing it at all costs. Most importantly avoid doing IO in the context of a request—don't make the user wait for your disk subsystem to write to disk, or even read.
 
-* Use streaming IO interfaces
+=== Use streaming IO interfaces
 
 Where-ever possible avoid reading data into a `[]byte` and passing it around. 
 
@@ -79,7 +73,7 @@ You need to limit the amount of blocking IO you issue. Use a pool of worker goro
 
 .code examples/semaphore.go /START OMIT/,/END OMIT/
 
-* Defer is expensive, or is it?
+=== Defer is expensive, or is it?
 
 `defer` is expensive because it has to record a closure for defer's arguments.
 
@@ -101,7 +95,7 @@ Always revisit these decisions.
 
 .link https://github.com/golang/go/issues/9704#issuecomment-251003577
 
-* Avoid Finalisers
+=== Avoid Finalisers
 
 Finalisation is a technique to attach behaviour to an object which is just about to be garbage collected.
 
@@ -113,7 +107,7 @@ Finalisers run as part of the gc cycle, which means it is unpredictable when the
 
 A finaliser may not run for a long time if you have a large heap and have tuned your appliation to create minimal garbage.
 
-* Minimise cgo
+=== Minimise cgo
 
 cgo allows Go programs to call into C libraries. 
 
@@ -125,7 +119,7 @@ cgo calls are similar to blocking IO, they consume a thread during operation.
 
 Do not call out to C code in the middle of a tight loop.
 
-* Actually, avoid cgo
+==== Actually, maybe avoid cgo
 
 cgo has a high overhead.
 
@@ -139,7 +133,7 @@ Is there anyone who's using cgo to call expensive C code frequently?
 
 .link http://dave.cheney.net/2016/01/18/cgo-is-not-go Further reading: cgo is not Go.
 
-* Always use the latest released version of Go
+=== Always use the latest released version of Go
 
 Old versions of Go will never get better. They will never get bug fixes or optimisations.
 
@@ -153,13 +147,11 @@ Old version of Go receive no updates. Do not use them. Use the latest and you wi
 .link http://dave.cheney.net/2016/04/02/go-1-7-toolchain-improvements Go 1.7 toolchain improvements
 .link http://dave.cheney.net/2016/09/18/go-1-8-performance-improvements-one-month-in Go 1.8 performance improvements
 
-* Discussion
+=== Discussion
 
 Any questions?
 
-* Conclusion
-
-* Conclusion
+== Conclusion
 
 Start with the simplest possible code.
 
@@ -171,8 +163,6 @@ As your application grows, or your traffic pattern evolves, the performance hot 
 
 Don't leave complex code that is not performance critical, rewrite it with simpler operations if the bottleneck moves elsewhere.
 
-* Conclusion (cont.)
-
 Always write the simplest code you can, the compiler is optimised for _normal_ code.
 
 Shorter code is faster code; Go is not C++, do not expect the compiler to unravel complicated abstractions.
@@ -181,7 +171,7 @@ Shorter code is _smaller_ code; which is important for the CPU's cache.
 
 Pay very close attention to allocations, avoid unnecessary allocation where possible.
 
-* Don't trade performance for reliability
+=== Don't trade performance for reliability
 
 "I can make things very fast if they don't have to be correct."
 .caption Russ Cox
@@ -194,3 +184,15 @@ Performance and reliability are equally important.
 I see little value in making a very fast server that panics, deadlocks or OOMs on a regular basis.
 
 Don't trade performance for reliability
+
+=== strings.Builder
+
+No silver bullets
+No free lunches 
+Performance starts (and ends) with design.
+
+=== Move hot fields to the top of the struct
+
+=== Maybe reconsider sync.Pool
+
+https://go-review.googlesource.com/c/go/+/166961

@@ -1,0 +1,65 @@
+= High Performance Go Workshop
+Dave Cheney <dave@cheney.net>
+{revnumber}, {docdate}
+:doctype: book
+:appendix-caption: Appx
+:sectnums:
+:toc:
+:homepage: https://dave.cheney.net/high-performance-go-workshop/en/index.html[Practical Go]
+
+== Welcome
+
+=== Instructors
+
+- Dave Cheney mailto:dave@cheney.net[]
+
+=== Overview
+
+The goal for this workshop is to give you the tools you need to diagnose performance problems in your Go applications and fix them.
+
+Through the day we'll work from the small -- learning how to write benchmarks, then profiling a small piece of code. Then step out and talk about the execution tracer, the garbage collector and tracing running applications. The remainder of the day will be a chance for you to ask questions, experiment with your own code.
+
+[TIP]
+====
+You can find the latest version of this presentation at
+
+{homepage}
+====
+
+=== Schedule (approx.)
+
+[cols=2*,options="header"]
+|=== 
+| Start
+| Description
+
+| 09:00 | Welcome and introduction
+| 09:30 | Benchmarking
+| 10:45	| Break (15 minutes)
+| 11:00	| Profiling
+| 12:00	| Lunch (90 minutes)
+| 13:30	| Execution tracer
+| 14:30	| Compiler optimisation
+| 15:15	| Break (15 minutes)
+| 15:30	| Tips and tricks
+| 16:00	| Exercises
+| 16:45	| Final Questions and conclusion
+| 17:00	| Close
+|===
+
+
+
+include::welcome.asciidoc[]
+
+include::introduction.asciidoc[]
+
+include::profiling.asciidoc[]
+
+:numbered!:
+
+:sectnums!:
+
+
+include::../common/biblography.asciidoc[]
+
+include::../common/index.asciidoc[]
