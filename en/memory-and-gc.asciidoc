@@ -14,7 +14,7 @@ The purpose of a garbage collector is to present the illusion that there is an i
 
 You may disagree with this statement, but this is the base assumption of how garbage collector designers think.
 
-# A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
+NOTE: A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
 
 The Go GC is designed for low latency servers and interactive applications.
 
