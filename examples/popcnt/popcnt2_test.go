@@ -1,4 +1,4 @@
-// +build ignore
+// +build none
 
 package main
 
@@ -9,18 +9,22 @@ const m2 = 0x3333333333333333
 const m4 = 0x0f0f0f0f0f0f0f0f
 const h01 = 0x0101010101010101
 
-func popcnt(x uint64) int {
+func popcnt(x uint64) uint64 {
 	x -= (x >> 1) & m1
 	x = (x & m2) + ((x >> 2) & m2)
 	x = (x + (x >> 4)) & m4
-	return int((x * h01) >> 56)
+	return (x * h01) >> 56
 }
 
-// START OMIT
+// tag::benchmark[]
+var Result uint64
+
 func BenchmarkPopcnt(b *testing.B) {
+	var r uint64
 	for i := 0; i < b.N; i++ {
-		// optimised away
+		r = popcnt(uint64(i))
 	}
+	Result = r
 }
 
-// END OMIT
+// end::benchmark[]
