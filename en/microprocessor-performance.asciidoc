@@ -271,7 +271,7 @@ So, for best performance on today's hardware in today's world, you need a progra
 
 Obviously we're here to talk about Go, and I believe that Go inherits many of the traits I just described.
 
-=== What's the take away?
+=== What does that mean for us?
 
 > There are only three optimizations: Do less. Do it less often. Do it faster.
 >
