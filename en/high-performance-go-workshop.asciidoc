@@ -62,6 +62,8 @@ include::compiler-optimisation.asciidoc[]
 
 include::execution-tracer.asciidoc[]
 
+include::memory-and-gc.asciidoc[]
+
 include::tips-and-tricks.asciidoc[]
 
 :leveloffset: -1

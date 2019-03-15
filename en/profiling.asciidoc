@@ -311,14 +311,13 @@ What we see is not the objects that were _allocated_ during the profile, but the
 ## Block profiling (example)
 The last profile type we'll look at is block profiling. We'll use the `ClientServer` benchmark from the `net/http` package 
 
-```
+[source,options=nowrap]
 % go test -run=XXX -bench=ClientServer$ -blockprofile=/tmp/block.p net/http
 % go tool pprof -web /tmp/block.p
-```
 
-![blockprof](images/blockprof.png)
+image::images/blockprof.png[]
 
-==== Framepointers
+=== Framepointers
 
 Go 1.7 has been released and along with a new compiler for amd64, the compiler now enables frame pointers by default.
 
