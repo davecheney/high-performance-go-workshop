@@ -1,9 +1,9 @@
-== Tips and trips
+= Tips and trips
 A random grab back of tips and suggestions
 
-=== Tips and Tricks
-
 This final section contains a number of tips to micro optimise Go code.
+
+== Goroutines
 
 The key feature of Go that makes it a great fit for modern hardware are goroutines.
 
@@ -15,7 +15,7 @@ However, each goroutine does consume a minimum amount of memory for the goroutin
 
 2048 * 1,000,000 goroutines == 2GB of memory, and they haven't done anything yet.
 
-# Maybe this is a lot, maybe it isn't given the other usages of your application
+Maybe this is a lot, maybe it isn't given the other usages of your application
 
 === Know when to stop a goroutine
 
@@ -29,8 +29,10 @@ In your design, some goroutines may run until the program exits. These goroutine
 
 TIP: Never start a goroutine without knowing how it will stop.
 
-.link https://www.youtube.com/watch?v=yKQOunhhf4A&index=16&list=PLq2Nv-Sh8EbZEjZdPLaQt1qh_ohZFMDj8 Concurrency Made Easy (video)
-.link https://dave.cheney.net/paste/concurrency-made-easy.pdf Concurrency Made Easy (slides)
+==== Further reading
+
+- https://www.youtube.com/watch?v=yKQOunhhf4A&index=16&list=PLq2Nv-Sh8EbZEjZdPLaQt1qh_ohZFMDj8[Concurrency Made Easy] (video)
+- https://dave.cheney.net/paste/concurrency-made-easy.pdf[Concurrency Made Easy] (slides)
 
 === Go uses efficient network polling for some requests
 
@@ -63,7 +65,7 @@ Instead use `io.Reader` and `io.Writer` to construct processing pipelines to cap
 
 For efficiency, consider implementing `io.ReaderFrom` / `io.WriterTo` if you use a lot of `io.Copy`. These interface are more efficient and avoid copying memory into a temporary buffer.
 
-* Timeouts, timeouts, timeouts
+=== Timeouts, timeouts, timeouts
 
 Never start an IO operating without knowing the maximum time it will take.
 
@@ -151,39 +153,7 @@ Old version of Go receive no updates. Do not use them. Use the latest and you wi
 
 Any questions?
 
-== Conclusion
 
-Start with the simplest possible code.
-
-_Measure_. Profile your code to identify the bottlenecks, _do_not_guess_.
-
-If performance is good, _stop_. You don't need to optimise everything, only the hottest parts of your code.
-
-As your application grows, or your traffic pattern evolves, the performance hot spots will change.
-
-Don't leave complex code that is not performance critical, rewrite it with simpler operations if the bottleneck moves elsewhere.
-
-Always write the simplest code you can, the compiler is optimised for _normal_ code.
-
-Shorter code is faster code; Go is not C++, do not expect the compiler to unravel complicated abstractions.
-
-Shorter code is _smaller_ code; which is important for the CPU's cache.
-
-Pay very close attention to allocations, avoid unnecessary allocation where possible.
-
-=== Don't trade performance for reliability
-
-"I can make things very fast if they don't have to be correct."
-.caption Russ Cox
-
-"Readable means reliable"
-.caption Rob Pike
-
-Performance and reliability are equally important.
-
-I see little value in making a very fast server that panics, deadlocks or OOMs on a regular basis.
-
-Don't trade performance for reliability
 
 === strings.Builder
 

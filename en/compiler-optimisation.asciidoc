@@ -1,4 +1,4 @@
-== Compiler optimisation
+= Compiler optimisation
 
 An overview of the optimisations the compiler implements and how to take advantage of them
 
@@ -10,7 +10,7 @@ This section gives a brief background on three important optimisations that the 
 
 These are all handled in the front end of the compiler, while the code is still in its AST form; then the code is passed to the SSA compiler for further optimisation. 
 
-=== History of the Go compiler
+== History of the Go compiler
 
 The Go compiler started as a fork of the Plan9 compiler tool chain ~ 2007.
 
