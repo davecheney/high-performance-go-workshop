@@ -6,6 +6,17 @@ The goal for this workshop is to give you the tools you need to diagnose perform
 
 Through the day we'll work from the small -- learning how to write benchmarks, then profiling a small piece of code. Then step out and talk about the execution tracer, the garbage collector  and tracing running applications. The remainder of the day will be a chance for you to ask questions, experiment with your own code.
 
+== Instructors
+
+- Dave Cheney mailto:dave@cheney.net[]
+
+== License and Materials
+
+This workshop is a collaboration between https://twitter.com/davecheney[David Cheney] and https://twitter.com/francesc[Francesc Campoy].
+
+This presentation is licensed under the https://creativecommons.org/licenses/by-sa/4.0/[Creative Commons Attribution-ShareAlike 4.0 International] licence.
+
+
 == Prerequisites
 
 The are several software downloads you will need today.
@@ -36,7 +47,7 @@ The section on the execution tracer requires Google Chrome.
 It will not work with Safari, Edge, Firefox, or IE 4.01.
 Please tell your battery I'm sorry. 
 
-https://www.google.com/chrome/[**Download Google Chrome**]
+https://www.google.com/chrome/[Download Google Chrome]
 
 === Your own code to profile and optimise
 
