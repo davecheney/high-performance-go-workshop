@@ -12,13 +12,13 @@ import (
 	"sync"
 )
 
-// START OMIT
+// tag::mandelbrot[]
 
 import "github.com/pkg/profile"
 
 func main() {
-	defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
-	// END OMIT
+	defer profile.Start(profile.TraceProfile, profile.ProfilePath(".")).Stop()
+	// end::mandelbrot[]
 
 	var (
 		height  = flag.Int("h", 1024, "height of the output image in pixels")
@@ -76,7 +76,6 @@ func (m *img) At(x, y int) color.Color { return m.m[x][y] }
 func (m *img) ColorModel() color.Model { return color.RGBAModel }
 func (m *img) Bounds() image.Rectangle { return image.Rect(0, 0, m.h, m.w) }
 
-// SEQSTART OMIT
 func seqFillImg(m *img) {
 	for i, row := range m.m {
 		for j := range row {
@@ -84,8 +83,6 @@ func seqFillImg(m *img) {
 		}
 	}
 }
-
-// SEQEND OMIT
 
 func oneToOneFillImg(m *img) {
 	var wg sync.WaitGroup
@@ -115,15 +112,20 @@ func onePerRowFillImg(m *img) {
 	wg.Wait()
 }
 
+// BUFSTART OMIT
 func nWorkersFillImg(m *img, workers int) {
-	c := make(chan struct{ i, j int })
+	c := make(chan struct{ i, j int }, m.h*m.w)
+	var wg sync.WaitGroup
+	wg.Add(workers)
 	for i := 0; i < workers; i++ {
 		go func() {
+			defer wg.Done()
 			for t := range c {
 				fillPixel(m, t.i, t.j)
 			}
 		}()
 	}
+	// BUFEND OMIT
 
 	for i, row := range m.m {
 		for j := range row {
@@ -131,6 +133,7 @@ func nWorkersFillImg(m *img, workers int) {
 		}
 	}
 	close(c)
+	wg.Wait()
 }
 
 func fillPixel(m *img, x, y int) {

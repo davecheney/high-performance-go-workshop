@@ -12,14 +12,14 @@ import (
 	"sync"
 )
 
-// START OMIT
+// tag::mandelbrot[]
 
 import "runtime/pprof"
 
 func main() {
 	pprof.StartCPUProfile(os.Stdout)
 	defer pprof.StopCPUProfile()
-	// END OMIT
+	// end::mandelbrot[]
 
 	var (
 		height  = flag.Int("h", 1024, "height of the output image in pixels")
