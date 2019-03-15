@@ -29,12 +29,12 @@ In your design, some goroutines may run until the program exits. These goroutine
 
 TIP: Never start a goroutine without knowing how it will stop.
 
-==== Further reading
+=== Further reading
 
 - https://www.youtube.com/watch?v=yKQOunhhf4A&index=16&list=PLq2Nv-Sh8EbZEjZdPLaQt1qh_ohZFMDj8[Concurrency Made Easy] (video)
 - https://dave.cheney.net/paste/concurrency-made-easy.pdf[Concurrency Made Easy] (slides)
 
-=== Go uses efficient network polling for some requests
+== Go uses efficient network polling for some requests
 
 The Go runtime handles network IO using an efficient operating system polling mechanism (kqueue, epoll, windows IOCP, etc). Many waiting goroutines will be serviced by a single operating system thread.
 
@@ -44,7 +44,7 @@ Heavy use of local file IO can cause your program to spawn hundreds or thousands
 
 Your disk subsystem does not expect to be able to handle hundreds or thousands of concurrent IO requests.
 
-=== Watch out for IO multipliers in your application
+== Watch out for IO multipliers in your application
 
 If you're writing a server process, its primary job is to multiplex clients connected over the network, and data stored in your application.
 
@@ -55,7 +55,7 @@ Most server programs take a request, do some processing, then return a result. T
 
 If memory is slow, relatively speaking, then IO is so slow that you should avoid doing it at all costs. Most importantly avoid doing IO in the context of a request—don't make the user wait for your disk subsystem to write to disk, or even read.
 
-=== Use streaming IO interfaces
+== Use streaming IO interfaces
 
 Where-ever possible avoid reading data into a `[]byte` and passing it around. 
 
@@ -65,7 +65,7 @@ Instead use `io.Reader` and `io.Writer` to construct processing pipelines to cap
 
 For efficiency, consider implementing `io.ReaderFrom` / `io.WriterTo` if you use a lot of `io.Copy`. These interface are more efficient and avoid copying memory into a temporary buffer.
 
-=== Timeouts, timeouts, timeouts
+== Timeouts, timeouts, timeouts
 
 Never start an IO operating without knowing the maximum time it will take.
 
@@ -75,7 +75,7 @@ You need to limit the amount of blocking IO you issue. Use a pool of worker goro
 
 .code examples/semaphore.go /START OMIT/,/END OMIT/
 
-=== Defer is expensive, or is it?
+== Defer is expensive, or is it?
 
 `defer` is expensive because it has to record a closure for defer's arguments.
 
@@ -97,7 +97,7 @@ Always revisit these decisions.
 
 .link https://github.com/golang/go/issues/9704#issuecomment-251003577
 
-=== Avoid Finalisers
+== Avoid Finalisers
 
 Finalisation is a technique to attach behaviour to an object which is just about to be garbage collected.
 
@@ -109,7 +109,7 @@ Finalisers run as part of the gc cycle, which means it is unpredictable when the
 
 A finaliser may not run for a long time if you have a large heap and have tuned your appliation to create minimal garbage.
 
-=== Minimise cgo
+== Minimise cgo
 
 cgo allows Go programs to call into C libraries. 
 
@@ -121,7 +121,7 @@ cgo calls are similar to blocking IO, they consume a thread during operation.
 
 Do not call out to C code in the middle of a tight loop.
 
-==== Actually, maybe avoid cgo
+=== Actually, maybe avoid cgo
 
 cgo has a high overhead.
 
@@ -135,7 +135,7 @@ Is there anyone who's using cgo to call expensive C code frequently?
 
 .link http://dave.cheney.net/2016/01/18/cgo-is-not-go Further reading: cgo is not Go.
 
-=== Always use the latest released version of Go
+== Always use the latest released version of Go
 
 Old versions of Go will never get better. They will never get bug fixes or optimisations.
 
@@ -149,12 +149,6 @@ Old version of Go receive no updates. Do not use them. Use the latest and you wi
 .link http://dave.cheney.net/2016/04/02/go-1-7-toolchain-improvements Go 1.7 toolchain improvements
 .link http://dave.cheney.net/2016/09/18/go-1-8-performance-improvements-one-month-in Go 1.8 performance improvements
 
-=== Discussion
-
-Any questions?
-
-
-
 === strings.Builder
 
 No silver bullets
@@ -166,3 +160,8 @@ Performance starts (and ends) with design.
 === Maybe reconsider sync.Pool
 
 https://go-review.googlesource.com/c/go/+/166961
+
+== Discussion
+
+Any questions?
+
