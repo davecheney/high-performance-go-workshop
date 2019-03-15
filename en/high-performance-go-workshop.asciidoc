@@ -7,19 +7,9 @@ Dave Cheney <dave@cheney.net>
 :toc:
 :homepage: https://dave.cheney.net/high-performance-go-workshop/en/[Practical Go]
 
-== Welcome
+:numbered!:
 
-=== Instructors
-
-- Dave Cheney mailto:dave@cheney.net[]
-
-=== License and Materials
-
-This workshop is a collaboration between https://twitter.com/davecheney[David Cheney] and https://twitter.com/francesc[Francesc Campoy].
-
-This presentation is licensed under the https://creativecommons.org/licenses/by-sa/4.0/[Creative Commons Attribution-ShareAlike 4.0 International] licence.
-
-=== Overview
+== Overview
 
 The goal for this workshop is to give you the tools you need to diagnose performance problems in your Go applications and fix them.
 
@@ -53,11 +43,16 @@ You can find the latest version of this presentation at
 | 17:00	| Close
 |===
 
+
 :leveloffset: +1
 
 include::welcome.asciidoc[]
 
+:numbered:
+
 include::microprocessor-performance.asciidoc[]
+
+include::benchmarking.asciidoc[]
 
 include::profiling.asciidoc[]
 

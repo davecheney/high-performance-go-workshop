@@ -1,12 +1,12 @@
-== Performance measurement and profiling
+= Performance measurement and profiling
 
-In the prevoius section we looked at benchmarking individual functions which is useful when you know ahead of time where the bottlekneck is. However, often you will find yourself in the position of asking
+In the previous section we looked at benchmarking individual functions which is useful when you know ahead of time where the bottlekneck is. However, often you will find yourself in the position of asking
 
 > Why is this program taking so long to run?
 
 Profiling _whole_ programs which is useful for answering high level questions like. In this section we'll use profiling tools built into Go to investigate the operation of the program from the inside.
 
-=== pprof
+== pprof
 
 The first tool we're going to be talking about today is _pprof_. [pprof][1] descends from the [Google Perf Tools][2] suite of tools and has been integrated into the Go runtime since the earliest public releases.
 
@@ -22,7 +22,7 @@ pprof supports several types of profiling, we'll discuss three of these today:
 - Block (or blocking) profiling.
 - Mutex contention profiling.
 
-==== CPU profiling
+=== CPU profiling
 
 CPU profiling is the most common type of profile, and the most obvious. 
 
@@ -32,7 +32,7 @@ Once the profile is complete we can analyse it to determine the hottest code pat
 
 The more times a function appears in the profile, the more time that code path is taking as a percentage of the total runtime.
 
-==== Memory profiling
+=== Memory profiling
 
 Memory profiling records the stack trace when a _heap_ allocation is made.
 
@@ -44,7 +44,7 @@ Because of memory profiling is sample based and because it tracks _allocations_ 
 
 _Personal_Opinion:_ I do not find memory profiling useful for finding memory leaks. There are better ways to determine how much memory your application is using. We will discuss these later in the presentation.
 
-==== Block profiling
+=== Block profiling
 
 Block profiling is quite unique. 
 
@@ -60,13 +60,13 @@ Block profiling can show you when a large number of goroutines _could_ make prog
 
 Block profiling is a very specialised tool, it should not be used until you believe you have eliminated all your CPU and memory usage bottlenecks.
 
-==== Mutex profiling
+=== Mutex profiling
 
 Mutex profiling is simlar to Block profiling, but is focused exclusively on operations that lead to delays caused by mutex contention.
 
 I don't have a lot of experience with this type of profile but I have built an example to demonstrate it. We'll look at that example shortly.
 
-=== One profile at at time
+== One profile at at time
 
 Profiling is not free.
 
@@ -78,7 +78,7 @@ TIP: Do not enable more than one kind of profile at a time.
 
 If you enable multiple profile's at the same time, they will observe their own interactions and throw off your results.
 
-=== Collecting a profile
+== Collecting a profile
 
 The Go runtime's profiling interface lives in the `runtime/pprof` package. `runtime/pprof` is a very low level tool, and for historic reasons the interfaces to the different kinds of profile are not uniform. 
 
@@ -86,24 +86,25 @@ As we saw in the previous section, pprof profiling is built into the `testing` p
 
 A few years ago I wrote a [small package][0], to make it easier to profile an existing application.
 
-```
+[source,go]
+----
 import "github.com/pkg/profile"
     
 func main() {
 	defer profile.Start().Stop()
-	...
+	// ...
 }
-```
+----
 We'll use the profile package throughout this section. Later in the day we'll touch on using the `runtime/pprof` interface directly.
 
-==== Using pprof
+== Using pprof
 
 Now that we've talked about what pprof can measure, and how to generate a profile, let's talk about how to use pprof to analyse a profile.
 
 The analysis is driven by the `go pprof` subcommand
-```
+----
 go tool pprof /path/to/your/profile
-```
+----
 
 TIP: If you've been using Go for a while, you might have been told that `pprof` takes two arguments. Since Go 1.9 the profile file contains all the information needed to render the profile. You do no longer need the binary which produced the profile. 🎉
 
@@ -115,91 +116,56 @@ TIP: If you've been using Go for a while, you might have been told that `pprof` 
 === CPU profiling (exercise)
 
 Let's write a program to count words:
-```
-package main
-
-import (
-        "fmt"
-        "io"
-        "log"
-        "os"
-        "unicode"
-)
-
-func readbyte(r io.Reader) (rune, error) {
-        var buf [1]byte
-        _, err := r.Read(buf[:])
-        return rune(buf[0]), err
-}
-
-func main() {
-        f, err := os.Open(os.Args[1])
-        if err != nil {
-                log.Fatalf("could not open file %q: %v", os.Args[1], err)
-        }
-
-        words := 0
-        inword := false
-        for {
-                r, err := readbyte(f)
-                if err == io.EOF {
-                        break
-                }
-                if err != nil {
-                        log.Fatalf("could not read file %q: %v", os.Args[1], err)
-                }
-                if unicode.IsSpace(r) && inword {
-                        words++
-                        inword = false
-                }
-                inword = unicode.IsLetter(r)
-        }
-        fmt.Printf("%q: %d words\n", os.Args[1], words)
-}
-```
-Let's see how many words there are in Herman Melville's classic [Moby Dick][6] (sourced from Project Gutenberg)
-```
+[source,go,options="nowrap"]
+----
+include::../examples/words/main.go[]
+----
+Let's see how many words there are in Herman Melville's classic https://www.gutenberg.org/ebooks/2701[Moby Dick] (sourced from Project Gutenberg)
+----
 % time go run main.go moby.txt
 "moby.txt": 181275 words
 
 real    0m2.110s
 user    0m1.264s
 sys     0m0.944s
-```
+----
 Let's compare that to unix's `wc -w`
-```
-% time wc -w  moby.txt
+----
+% time wc -w moby.txt
   215829 moby.txt
 
 real    0m0.012s
 user    0m0.009s
 sys     0m0.002s
-```
-So the numbers aren't the same. `wc` is about 19% higher because what it considers a word is different to what my simple program does. That's not important--both programs take the whole file as input and in a single pass count the number of transitions from word to non word.
+----
+So the numbers aren't the same.
+`wc` is about 19% higher because what it considers a word is different to what my simple program does.
+That's not important--both programs take the whole file as input and in a single pass count the number of transitions from word to non word.
 
 Let's investigate why these programs have different run times using pprof.
 
-==== Add CPU profiling
+=== Add CPU profiling
 
 First, edit `main.go` and enable profiling
-```go
-        ...
+[source,go]
+----
+import (
         "github.com/pkg/profile"
 )
 
 func main() {
         defer profile.Start().Stop()
-        ...
-```
+        // ...
+----
 Now when we run the program a `cpu.pprof` file is created.
-```
+----
 % go run main.go moby.txt
 2018/08/25 14:09:01 profile: cpu profiling enabled, /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile239941020/cpu.pprof
 "moby.txt": 181275 words
 2018/08/25 14:09:03 profile: cpu profiling disabled, /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile239941020/cpu.pprof
-```
+----
 Now we have the profile we can analyse it with `go tool pprof`
-```
+----
 % go tool pprof /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile239941020/cpu.pprof
 Type: cpu
 Time: Aug 25, 2018 at 2:09pm (AEST)
@@ -217,7 +183,7 @@ Showing nodes accounting for 1.42s, 100% of 1.42s total
          0     0%   100%      1.42s   100%  runtime.main
          0     0%   100%      1.41s 99.30%  syscall.Read
          0     0%   100%      1.41s 99.30%  syscall.read
-```
+----
 The `top` command is one you'll use the most. We can see that 99% of the time this program spends in `syscall.Syscall`, and a small part in `main.readbyte`. 
 
 We can also visualise this call the with the `web` command. This will generate a directed graph from the profile data. Under the hood this uses the `dot` command from Graphviz.
@@ -383,7 +349,7 @@ Add profiling to an application. If you don't have a piece of code that you are 
 [2]: https://github.com/gperftools/gperftools
 [4]: http://blog.golang.org/profiling-go-programs
 [5]: https://software.intel.com/en-us/blogs/2014/05/10/debugging-performance-issues-in-go-programs
-[6]: https://www.gutenberg.org/ebooks/2701
+
 
 == Performance measurement and profiling
 
