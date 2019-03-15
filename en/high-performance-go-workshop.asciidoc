@@ -2,6 +2,9 @@
 Dave Cheney <dave@cheney.net>
 {revnumber}, {docdate}
 :doctype: book
+:icons: font
+:idprefix:
+:sectids:
 :appendix-caption: Appx
 :sectnums:
 :toc:
@@ -42,7 +45,6 @@ You can find the latest version of this presentation at
 | 16:45	| Final Questions and conclusion
 | 17:00	| Close
 |===
-
 
 :leveloffset: +1
 

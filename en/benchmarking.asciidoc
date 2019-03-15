@@ -91,7 +91,6 @@ For times measured in 10 or single digit nanoseconds per operation the relativis
 
 To address this run benchmarks multiple times with the `-count` flag:
 [source,options=nowrap]
-----
 % go test -bench=Fib1 -count=10 ./examples/fib/
 goos: darwin
 goarch: amd64
@@ -105,10 +104,10 @@ BenchmarkFib1-8         2000000000               1.99 ns/op
 BenchmarkFib1-8         2000000000               2.01 ns/op
 BenchmarkFib1-8         2000000000               1.99 ns/op
 BenchmarkFib1-8         1000000000               2.00 ns/op
-----
+
 A benchmark of `Fib(1)` takes around 2 nano seconds with a variance of +/- 2%. 
 
-TIP: (TODO) -benchtime=100x
+TODO -benchtime=100x
 
 TIP: If you find that the defaults that `go test` applies need to be tweaked for a particular package, I suggest codifying those settings in a `Makefile` so everyone who wants to run your benchmarks can do so with the same settings.
 
@@ -276,50 +275,57 @@ include::../examples/popcnt/popcnt_test.go[tags=popcnt]
 ----
 
 How fast do you think this function will benchmark? Let's find out.
-```
+----
 % go test -bench=. ./examples/popcnt/
 goos: darwin
 goarch: amd64
 BenchmarkPopcnt-8       2000000000               0.30 ns/op
 PASS
-```
-0.3 of a nano second; that's basically one clock cycle. Even assuming that the CPU may have a few instructions in flight per clock tick, this number seems unreasonably low. What happened?
+----
+0.3 of a nano second; that's basically one clock cycle.
+Even assuming that the CPU may have a few instructions in flight per clock tick, this number seems unreasonably low.
+What happened?
 
-To understand what happened, we have to look at the function under benchmake, `popcnt`. `popcnt` is a leaf function -- it does not call any other functions --  so the compiler can inline it.
+To understand what happened, we have to look at the function under benchmake, `popcnt`.
+`popcnt` is a leaf function -- it does not call any other functions -- so the compiler can inline it.
 
-Because the function is inlined, the compiler now can see it has no side effects. `popcnt` does not affect the state of any global variable. Thus, the call is eliminated. This is what the compiler sees:
-```go
-func BenchmarkPopcnt(b *testing.B) {
-        for i := 0; i < b.N; i++ {
-                // optimised away
-        }
-}
-```
-On all versions of the Go compiler, the loop is still generated. But Intel CPUs are really good at optimising loops, especially empty ones. 
+Because the function is inlined, the compiler now can see it has no side effects.
+`popcnt` does not affect the state of any global variable.
+Thus, the call is eliminated.
+This is what the compiler sees:
+[source,go,options=nowrap]
+include::../examples/popcnt/popcnt_nobuild.go[tags=benchmark]
 
-### Optimisation is a good thing
+On all versions of the Go compiler, the loop is still generated.
+But Intel CPUs are really good at optimising loops, especially empty ones. 
+
+==== Exercise, look at the asmbley
+
+Before we go on, lets look at the assembly to confirm what we saw
+
+go test -gcflags=-S
+
+TODO: use -l to disable inlining, which disables the optimisation
+
+=== Optimisation is a good thing
 
 The thing to take away is the same optimisations that _make real code fast_, by removing unnecessary computation, are the same ones that remove benchmarks that have no observable side effects.
 
 This is only going to get more common as the Go compiler improves.
 
-### Fixing the benchmark
+=== Fixing the benchmark
+
+Disabling inlining to make the benchmark work is unrealistic; we want to build our code with optimisations on.
 
 To fix this benchmark we must ensure that the compiler cannot _prove_ that the body of `BenchmarkPopcnt` does not cause global state to change.
-```go
-var Result uint64
-
-func BenchmarkPopcnt(b *testing.B) {
-        var r uint64
-        for i := 0; i < b.N; i++ {
-                r = popcnt(uint64(i))
-        }
-        Result = r
-}
-```
+[source,go,options=nowrap]
+----
+include::../examples/popcnt/popcnt2_test.go[tags=benchmark]
+----
 This is the recommended way to ensure the compiler cannot optimise away body of the loop.
 
-First we _use_ the result of calling `popcnt` by storing it in `r`. Second, because `r` is declared locally inside the scope of `BenchmarkPopcnt` once the benchmark is over, the result of `r` is never visible to another part of the program, so as the final act we assign the value of `r` to the package public variable `Result`. 
+First we _use_ the result of calling `popcnt` by storing it in `r`.
+Second, because `r` is declared locally inside the scope of `BenchmarkPopcnt` once the benchmark is over, the result of `r` is never visible to another part of the program, so as the final act we assign the value of `r` to the package public variable `Result`. 
 
 Because `Result` is public the compiler cannot prove that another package importing this one will not be able to see the value of `Result` changing over time, hence it cannot optimise away any of the operations leading to its assignment.
 
@@ -327,28 +333,29 @@ _Exercise_: What happens if we assign to `Result` directly? Does this affect the
 
 _Question_: In our earlier `Fib` benchmark we didn't take these precautions, should we have done so?
 
-## Benchmark mistakes
+=== Benchmark mistakes
 
 The `for` loop is crucial to the operation of the benchmark.
 
 Here are two incorrect benchmarks, can you explain what is wrong with them?
 
-```go
+[source]
 func BenchmarkFibWrong(b *testing.B) {
         Fib(b.N)
 }
-```
 
-```go
+[source]
 func BenchmarkFibWrong2(b *testing.B) {
         for n := 0; n < b.N; n++ {
                 Fib(n)
         }
 }
-```
+
+TODO: move to go source
+
 _Exercise_: Run these benchmarks, what do you see?
 
-## Profiling benchmarks
+=== Profiling benchmarks
 
 The `testing` package has built in support for generating CPU, memory, and block profiles.
 
@@ -358,12 +365,11 @@ The `testing` package has built in support for generating CPU, memory, and block
 
 Using any of these flags also preserves the binary.
 
-```
+[source]
 % go test -run=XXX -bench=. -cpuprofile=c.p bytes
 % go tool pprof c.p
-```
 
-## Discussion
+== Discussion
 
 Are there any questions?
 
