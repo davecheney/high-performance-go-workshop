@@ -12,13 +12,13 @@ import (
 	"sync"
 )
 
-// START OMIT
+// tag::mandelbrot[]
 
 import "github.com/pkg/profile"
 
 func main() {
-	defer profile.Start(profile.TraceProfile, profile.ProfilePath(".")).Stop()
-	// END OMIT
+	defer profile.Start(profile.CPUProfile, profile.ProfilePath(".")).Stop()
+	// end::mandelbrot[]
 
 	var (
 		height  = flag.Int("h", 1024, "height of the output image in pixels")

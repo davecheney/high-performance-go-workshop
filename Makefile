@@ -13,7 +13,7 @@ DIRS = $(SITE) $(IMAGES) $(SITE)/$(LANG) $(OUTPUT)
 GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always)
 GIT_DATE := $(shell git log -1 --format=%cd)
 
-site: $(SITE)/$(TITLE).html $(IMAGES)/image-20180818145606919.png $(IMAGES)/jalopnik.png $(IMAGES)/cpu-performance.png $(IMAGES)/int_graph.png $(IMAGES)/stuttering.png
+site: $(SITE)/$(TITLE).html $(IMAGES)/image-20180818145606919.png $(IMAGES)/jalopnik.png $(IMAGES)/cpu-performance.png $(IMAGES)/int_graph.png $(IMAGES)/stuttering.png $(IMAGES)/mandelbrot.png
 	rsync -az -e "ssh -o StrictHostKeyChecking=no -o ControlMaster=auto -o 'ControlPath=~/.ssh/cm_socket/%r@%h:%p' -o ControlPersist=yes" $(SITE) dave.cheney.net:/export/sites/cheney.net/dave/htdocs/
 
 pdf: $(OUTPUT)/$(TITLE).pdf

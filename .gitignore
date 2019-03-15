@@ -2,3 +2,4 @@
 *.swo
 vendor/
 output/
+.DS_Store
