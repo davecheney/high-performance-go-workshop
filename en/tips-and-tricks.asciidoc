@@ -15,7 +15,7 @@ However, each goroutine does consume a minimum amount of memory for the goroutin
 
 2048 * 1,000,000 goroutines == 2GB of memory, and they haven't done anything yet.
 
-Maybe this is a lot, maybe it isn't given the other usages of your application
+Maybe this is a lot, maybe it isn't given the other usages of your application.
 
 === Know when to stop a goroutine
 
@@ -23,9 +23,9 @@ Goroutines are cheap to start and cheap to run, but they do have a finite cost i
 
 Every time you use the `go` keyword in your program to launch a goroutine, you must *know* how, and when, that goroutine will exit.
 
-If you don't know the answer, that's a potential memory leak.
-
 In your design, some goroutines may run until the program exits. These goroutines are rare enough to not become an exception to the rule.
+
+If you don't know the answer, that's a potential memory leak as the goroutine will pin its stack's memory on the heap, as well as any heap allocated variables reachable from the stack.
 
 TIP: Never start a goroutine without knowing how it will stop.
 
@@ -33,6 +33,7 @@ TIP: Never start a goroutine without knowing how it will stop.
 
 - https://www.youtube.com/watch?v=yKQOunhhf4A&index=16&list=PLq2Nv-Sh8EbZEjZdPLaQt1qh_ohZFMDj8[Concurrency Made Easy] (video)
 - https://dave.cheney.net/paste/concurrency-made-easy.pdf[Concurrency Made Easy] (slides)
+- https://dave.cheney.net/practical-go/presentations/qcon-china.html#_never_start_a_goroutine_without_knowning_when_it_will_stop[Never start a goroutine without knowning when it will stop] (Practical Go, QCon Shanghai 2018)
 
 == Go uses efficient network polling for some requests
 

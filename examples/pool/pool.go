@@ -2,7 +2,7 @@ package p
 
 import "sync"
 
-// tag=pool[]
+// tag::pool[]
 var pool = sync.Pool{New: func() interface{} { return make([]byte, 4096) }}
 
 func fn() {

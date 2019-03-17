@@ -68,11 +68,14 @@ include::tips-and-tricks.asciidoc[]
 
 :leveloffset: -1
 
+:numbered!:
 == Conclusion
+
+> Readable means reliable -- Rob Pike
 
 Start with the simplest possible code.
 
-_Measure_. Profile your code to identify the bottlenecks, _do_not_guess_.
+_Measure_. Profile your code to identify the bottlenecks, _do not guess_.
 
 If performance is good, _stop_. You don't need to optimise everything, only the hottest parts of your code.
 
@@ -88,13 +91,7 @@ Shorter code is _smaller_ code; which is important for the CPU's cache.
 
 Pay very close attention to allocations, avoid unnecessary allocation where possible.
 
-=== Don't trade performance for reliability
-
-"I can make things very fast if they don't have to be correct."
-.caption Russ Cox
-
-"Readable means reliable"
-.caption Rob Pike
+> I can make things very fast if they don't have to be correct. -- Russ Cox
 
 Performance and reliability are equally important.
 

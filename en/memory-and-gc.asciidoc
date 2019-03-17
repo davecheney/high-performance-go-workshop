@@ -197,16 +197,22 @@ return s
 
 The `sync` package comes with a `sync.Pool` type which is used to reuse common objects.
 
-`sync.Pool` has no fixed size or maximum capacity. You add to it and take from it until a GC happens, then it is emptied unconditionally. 
+`sync.Pool` has no fixed size or maximum capacity. You add to it and take from it until a GC happens, then it is emptied unconditionally.
+This is https://groups.google.com/forum/#!searchin/golang-dev/gc-aware/golang-dev/kJ_R6vYVYHU/LjoGriFTYxMJ[by design];
+
+> If before garbage collection is too early and after garbage collection too late, then the right time to drain the pool must be during garbage collection. That is, the semantics of the Pool type must be that it drains at each garbage collection. -- Russ Cox
 
 [source,go,options=nowrap]
 ----
 include::../examples/pool/pool.go[tags=pool]
 ----
 
-WARNING: `sync.Pool` is not a cache. It can and will be emptied _at_any_time_.
+[WARNING]
+====
+`sync.Pool` is not a cache. It can and will be emptied _at_any_time_.
 
 Do not place important items in a `sync.Pool`, they will be discarded.
+====
 
 TODO: pool changes in Go 1.13. https://go-review.googlesource.com/c/go/+/166961/
 
