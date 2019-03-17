@@ -10,15 +10,15 @@ This section discusses the operation of the garbage collector, how to measure th
 
 == Garbage collector world view
 
-The purpose of a garbage collector is to present the illusion that there is an infinite amount of memory available to the program.
+The purpose of any garbage collector is to present the illusion that there is an infinite amount of memory available to the program.
 
-You may disagree with this statement, but this is the base assumption of how garbage collector designers think.
+You may disagree with this statement, but this is the base assumption of how garbage collector designers work.
 
-NOTE: A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
+A stop the world, mark sweep GC is the most efficient in terms of total run time; good for batch processing, simulation, etc.
+However, over time the Go GC has moved from a pure stop the world collector to a concurrent, non compacting, collector.
+This is because the Go GC is designed for low latency servers and interactive applications.
 
-The Go GC is designed for low latency servers and interactive applications.
-
-The Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
+The design of the Go GC favors _lower_latency_ over _maximum_throughput_; it moves some of the allocation cost to the mutator to reduce the cost of cleanup later.
 
 == Garbage collector design
 
@@ -30,7 +30,7 @@ The design of the Go GC has changed over the years
 - Go 1.6, GC improvements, handling larger heaps with lower latency.
 - Go 1.7, small GC improvements, mainly refactoring.
 - Go 1.8, further work to reduce STW times, now down to the 100 microsecond range.
-- Go 1.9, ROC collector is an experiment to extend the idea of escape analysis per goroutine.
+- Go 1.10+, https://github.com/golang/proposal/blob/master/design/24543-non-cooperative-preemption.md[move away from pure cooprerative goroutine scheduling] to lower the latency when triggering a full GC cycle.
 
 == Garbage collector monitoring
 
@@ -47,6 +47,8 @@ gc 4 @0.042s 17%: 0.067+5.1+0.15+0.29+0.95 ms clock, 0.20+5.1+0+3.0/0/0.070+2.8 
 gc 5 @0.051s 21%: 0.029+5.6+0.33+0.62+1.5 ms clock, 0.11+5.6+0+3.3/0.006/0.002+6.0 ms cpu, 5->6->4 MB, 5 MB goal, 4 P
 gc 6 @0.061s 23%: 0.080+7.6+0.17+0.22+0.45 ms clock, 0.32+7.6+0+5.4/0.001/0.11+1.8 ms cpu, 6->6->5 MB, 7 MB goal, 4 P
 gc 7 @0.071s 25%: 0.59+5.9+0.017+0.15+0.96 ms clock, 2.3+5.9+0+3.8/0.004/0.042+3.8 ms cpu, 6->8->6 MB, 8 MB goal, 4 P
+
+TODO: update
 
 The trace output gives a general measure of GC activity.
 
@@ -92,7 +94,7 @@ For example, if we currently have a 256MB heap, and `GOGC=100` (the default), wh
 
 The default value of 100 is _just_a_guide_. you should choose your own value _after profiling your application with production loads_.
 
-== Reduce allocations
+== Reducing allocations
 
 Make sure your APIs allow the caller to reduce the amount of garbage generated.
 
@@ -101,7 +103,8 @@ Consider these two Read methods
  func (r *Reader) Read() ([]byte, error)
  func (r *Reader) Read(buf []byte) (int, error)
 
-The first Read method takes no arguments and returns some data as a `[]byte`. The second takes a `[]byte` buffer and returns the amount of bytes read.
+The first Read method takes no arguments and returns some data as a `[]byte`.
+The second takes a `[]byte` buffer and returns the amount of bytes read.
 
 The first Read method will _always_ allocate a buffer, putting pressure on the GC. The second fills the buffer it was given.
 
@@ -113,9 +116,10 @@ In Go `string` values are immutable, `[]byte` are mutable.
 
 Most programs prefer to work `string`, but most IO is done with `[]byte`.
 
-Avoid `[]byte` to string conversions wherever possible, this normally means picking one representation, either a `string` or a `[]byte` for a value. Often this will be `[]byte` if you read the data from the network or disk.
+Avoid `[]byte` to string conversions wherever possible, this normally means picking one representation, either a `string` or a `[]byte` for a value.
+Often this will be `[]byte` if you read the data from the network or disk.
 
-The [[https://golang.org/pkg/bytes/][`bytes`]] package contains many of the same operations— `Split`, `Compare`, `HasPrefix`, `Trim`, etc—as the [[https://golang.org/pkg/strings/][`strings`]] package.
+The https://golang.org/pkg/bytes/[`bytes`] package contains many of the same operations -- `Split`, `Compare`, `HasPrefix`, `Trim`, etc -- as the https://golang.org/pkg/strings/[`strings`] package.
 
 Under the hood `strings` uses same assembly primitives as the `bytes` package.
 
@@ -125,24 +129,35 @@ It is very common to use a `string` as a map key, but often you have a `[]byte`.
 
 The compiler implements a specific optimisation for this case
 
- var m map[string]string
- v, ok := m[string(bytes)]
+[source,go]
+var m map[string]string
+v, ok := m[string(bytes)]
 
 This will avoid the conversion of the byte slice to a string for the map lookup. This is very specific, it won't work if you do something like
 
- key := string(bytes)
- val, ok := m[key] 
+[source]
+key := string(bytes)
+val, ok := m[key] 
+
+_Exercise_: Let's see if this is still true. Write a benchmark comparing these two methods of using a `[]byte` as a `string` map key.
 
 == Avoid string concatenation
 
 Go strings are immutable. Concatenating two strings generates a third. Which of the following is fastest? 
 
-.code examples/concat/concat_test.go /START1 OMIT/,/END1 OMIT/
-.code examples/concat/concat_test.go /START2 OMIT/,/END2 OMIT/
-.code examples/concat/concat_test.go /START3 OMIT/,/END3 OMIT/
-.code examples/concat/concat_test.go /START4 OMIT/,/END4 OMIT/
+[source,go,options=nowrap]
+include::../examples/concat/concat_test.go[tags=one]
 
-DEMO: `go`test`-bench=.`./examples/concat`
+[source,go,options=nowrap]
+include::../examples/concat/concat_test.go[tags=two]
+
+[source,go,options=nowrap]
+include::../examples/concat/concat_test.go[tags=three]
+
+[source,go,options=nowrap]
+include::../examples/concat/concat_test.go[tags=four]
+
+DEMO: `go test -bench=. ./examples/concat`
 
 == Preallocate slices if the length is known
 
@@ -150,7 +165,10 @@ Append is convenient, but wasteful.
 
 Slices grow by doubling up to 1024 elements, then by approximately 25% after that. What is the capacity of `b` after we append one more item to it?
 
-.play examples/grow.go /START OMIT/,/END OMIT/
+[source,go,options=nowrap]
+----
+include::../examples/grow/grow.go[tags=main]
+----
 
 If you use the append pattern you could be copying a lot of data and creating a lot of garbage.
 
@@ -158,20 +176,22 @@ If know know the length of the slice beforehand, then pre-allocate the target to
 
 _Before:_
 
-     var s []string
-     for _, v := range fn() {
-            s = append(s, v)
-     }
-     return s
+[source,go]
+var s []string
+for _, v := range fn() {
+        s = append(s, v)
+}
+return s
 
 _After:_
 
-     vals := fn()
-     s := make([]string, len(vals))
-     for i, v := range vals {
-            s[i] = v           
-     }
-     return s
+[source,go]
+vals := fn()
+s := make([]string, len(vals))
+for i, v := range vals {
+        s[i] = v           
+}
+return s
 
 == Using sync.Pool
 
@@ -179,13 +199,16 @@ The `sync` package comes with a `sync.Pool` type which is used to reuse common o
 
 `sync.Pool` has no fixed size or maximum capacity. You add to it and take from it until a GC happens, then it is emptied unconditionally. 
 
-.code examples/pool.go /START OMIT/,/END OMIT/
+[source,go,options=nowrap]
+----
+include::../examples/pool/pool.go[tags=pool]
+----
 
 WARNING: `sync.Pool` is not a cache. It can and will be emptied _at_any_time_.
 
 Do not place important items in a `sync.Pool`, they will be discarded.
 
-_Personal_opinion_: `sync.Pool` is hard to use safely. Don't use `sync.Pool`.
+TODO: pool changes in Go 1.13. https://go-review.googlesource.com/c/go/+/166961/
 
 == Exercises
 

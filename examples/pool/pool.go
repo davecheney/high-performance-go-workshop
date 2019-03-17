@@ -2,7 +2,7 @@ package p
 
 import "sync"
 
-// START OMIT
+// tag=pool[]
 var pool = sync.Pool{New: func() interface{} { return make([]byte, 4096) }}
 
 func fn() {
@@ -11,4 +11,4 @@ func fn() {
 	pool.Put(buf) // returns buf to the pool
 }
 
-// END OMIT
+// end::pool[]
