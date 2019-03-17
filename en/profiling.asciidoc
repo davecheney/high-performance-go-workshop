@@ -8,12 +8,14 @@ Profiling _whole_ programs which is useful for answering high level questions li
 
 == pprof
 
-The first tool we're going to be talking about today is _pprof_. [pprof][1] descends from the [Google Perf Tools][2] suite of tools and has been integrated into the Go runtime since the earliest public releases.
+The first tool we're going to be talking about today is _pprof_. https://github.com/google/pprof[pprof] descends from the https://github.com/gperftools/gperftools[Google Perf Tools] suite of tools and has been integrated into the Go runtime since the earliest public releases.
 
 `pprof`  consists of two parts:
 
 - `runtime/pprof` package built into every Go program
 - `go tool pprof` for investigating profiles.
+
+== Types of profiles
 
 pprof supports several types of profiling, we'll discuss three of these today: 
 
@@ -38,21 +40,25 @@ Memory profiling records the stack trace when a _heap_ allocation is made.
 
 Stack allocations are assumed to be free and are _not_tracked_ in the memory profile.
 
-Memory profiling, like CPU profiling is sample based, by default memory profiling samples 1 in every 1000 allocations. This rate can be changed.
+Memory profiling, like CPU profiling is sample based, by default memory profiling samples 1 in every 1000 allocations.
+This rate can be changed.
 
 Because of memory profiling is sample based and because it tracks _allocations_ not _use_, using memory profiling to determine your application's overall memory usage is difficult.
 
-_Personal_Opinion:_ I do not find memory profiling useful for finding memory leaks. There are better ways to determine how much memory your application is using. We will discuss these later in the presentation.
+_Personal Opinion:_ I do not find memory profiling useful for finding memory leaks.
+There are better ways to determine how much memory your application is using.
+We will discuss these later in the presentation.
 
 === Block profiling
 
-Block profiling is quite unique. 
+Block profiling is quite unique to Go.
 
 A block profile is similar to a CPU profile, but it records the amount of time a goroutine spent waiting for a shared resource.
 
 This can be useful for determining _concurrency_ bottlenecks in your application.
 
-Block profiling can show you when a large number of goroutines _could_ make progress, but were _blocked_. Blocking includes:
+Block profiling can show you when a large number of goroutines _could_ make progress, but were _blocked_.
+Blocking includes:
 
 - Sending or receiving on a unbuffered channel.
 - Sending to a full channel, receiving from an empty one.
@@ -64,7 +70,8 @@ Block profiling is a very specialised tool, it should not be used until you beli
 
 Mutex profiling is simlar to Block profiling, but is focused exclusively on operations that lead to delays caused by mutex contention.
 
-I don't have a lot of experience with this type of profile but I have built an example to demonstrate it. We'll look at that example shortly.
+I don't have a lot of experience with this type of profile but I have built an example to demonstrate it.
+We'll look at that example shortly.
 
 == One profile at at time
 
@@ -74,9 +81,12 @@ Profiling has a moderate, but measurable impact on program performance—especia
 
 Most tools will not stop you from enabling multiple profiles at once.
 
-TIP: Do not enable more than one kind of profile at a time.
+[TIP]
+====
+Do not enable more than one kind of profile at a time.
 
 If you enable multiple profile's at the same time, they will observe their own interactions and throw off your results.
+====
 
 == Collecting a profile
 
@@ -97,7 +107,7 @@ func main() {
 ----
 We'll use the profile package throughout this section. Later in the day we'll touch on using the `runtime/pprof` interface directly.
 
-== Using pprof
+== Analysting a profile with pprof
 
 Now that we've talked about what pprof can measure, and how to generate a profile, let's talk about how to use pprof to analyse a profile.
 
@@ -105,6 +115,8 @@ The analysis is driven by the `go pprof` subcommand
 ----
 go tool pprof /path/to/your/profile
 ----
+
+This tool provides several different representations of the profiling data; textual, graphical, even flame graphs.
 
 TIP: If you've been using Go for a while, you might have been told that `pprof` takes two arguments. Since Go 1.9 the profile file contains all the information needed to render the profile. You do no longer need the binary which produced the profile. 🎉
 
@@ -129,10 +141,13 @@ real    0m2.110s
 user    0m1.264s
 sys     0m0.944s
 ----
+
+TODO: why am I using `go run`, not `go build`
+
 Let's compare that to unix's `wc -w`
 ----
 % time wc -w moby.txt
-  215829 moby.txt
+215829 moby.txt
 
 real    0m0.012s
 user    0m0.009s
@@ -188,7 +203,7 @@ The `top` command is one you'll use the most. We can see that 99% of the time th
 
 We can also visualise this call the with the `web` command. This will generate a directed graph from the profile data. Under the hood this uses the `dot` command from Graphviz.
 
-![pprof](images/pprof.png)
+image::images/profile001.svg[]
 
 On the graph the box that consumes the _most_ CPU time is the largest -- we see `sys call.Syscall` at 99.3% of the total time spent in the program. The string of boxes leading to `syscall.Syscall` represent the immediate callers -- there can be more than one if multiple code paths converge on the same function. The size of the arrow represents how much time was spent in children of a box, we see that from `main.readbyte` onwards they account for near 0 of the 1.41 second spent in this arm of the graph.
 
@@ -348,11 +363,6 @@ Add profiling to an application. If you don't have a piece of code that you are 
 [2]: https://github.com/gperftools/gperftools
 [4]: http://blog.golang.org/profiling-go-programs
 [5]: https://software.intel.com/en-us/blogs/2014/05/10/debugging-performance-issues-in-go-programs
-
-
-== Performance measurement and profiling
-
-In this section we'll use profiling tools built into Go to investigate the operation of the program from the inside.
 
 === pprof
 

@@ -4,20 +4,9 @@ The execution tracer was developed by https://github.com/dvyukov[Dmitry Vyukov] 
 
 Unlike sample based profiling, the execution tracer is integrated into the Go runtime, so it does just know what a Go program is doing at a particular point in time, but _why_.
 
-== Agenda
-
-This workshop is aimed at developers who are looking to improve the performance, or diagnose perfromance issues, in their Go applications.
-
-- What is execution tracing, why do we need it?
-- Excution tracer basics.
-- Diagnosis with the execution tracer.
-- Conclusion.
-
-After each section we'll have time for questions.
-
 == What is the execution tracer, why do we need it?
 
-I think its easiest to explain what the execution tracer does, and why it's important by looking at a piece of code where the profiler, `go tool pprof` performs poorly.
+I think its easiest to explain what the execution tracer does, and why it's important by looking at a piece of code where the pprof, `go tool pprof` performs poorly.
 
 The `examples/mandelbrot` directory contains a simple mandelbrot generator.
 This code is derived from [[https://github.com/campoy/mandelbrot][Francesc Campoy's mandelbrot package]].
@@ -30,7 +19,7 @@ If we build it, then run it, it generates something like this
 
 image::images/mandelbrot.png][]
 
-== How long does it take?
+=== How long does it take?
 
 So, how long does this program take to generate a 1024 x 1024 pixel image?
 
@@ -42,9 +31,9 @@ real    0m1.654s
 user    0m1.630s
 sys     0m0.015s
 
-NOTE: Don't use `time`go`run`mandebrot.go` or you'll time how long it takes to _compile_ the program as well as run it.
+NOTE: Don't use `time go run mandebrot.go` or you'll time how long it takes to _compile_ the program as well as run it.
 
-== What is the program doing?
+=== What is the program doing?
 
 So, in this example the program took 1.6 seconds to generate the mandelbrot and write to to a png.
 
@@ -76,16 +65,16 @@ By adding this code to the top of the `main` function, this program will write a
 cd examples/mandelbrot-runtime-pprof
 go run mandelbrot.go > cpu.pprof
 
-NOTE: We can use `go`run` in this case because the cpu profile will only include the execution of `mandelbrot.go`, not its compilation.
+NOTE: We can use `go run` in this case because the cpu profile will only include the execution of `mandelbrot.go`, not its compilation.
 
-== Generating a profile with github.com/pkg/profile
+=== Generating a profile with github.com/pkg/profile
 
 The previous slide showed a super cheap way to generate a profile, but it has a few problems.
 
 - If you forget to redirect the output to a file then you'll blow up that terminal session. 😞 (hint: `reset(1)` is your friend)
 - If you write anything else to `os.Stdout`, for example, `fmt.Println` you'll corrupt the trace.
 
-The recommended way to use `runtime/pprof` is to https://godoc.org/runtime/pprof#hdr-Profiling_a_Go_program[write the trace to a file]].
+The recommended way to use `runtime/pprof` is to https://godoc.org/runtime/pprof#hdr-Profiling_a_Go_program[write the trace to a file].
 But, then you have to make sure the trace is stopped, and file is closed before your program stops, including if someone `^C`'s it.
 
 So, a few years ago I wrote a https://godoc.org/github.gom/pkg/profile[package] to take care of it.
@@ -104,9 +93,9 @@ If we run this version, we get a profile written to the current working director
 
 NOTE: Using `pkg/profile` is not mandatory, but it takes care of a lot of the boilerplate around collecting and recording traces, so we'll use it for the rest of this workshop.
 
-== Analysing the profile
+=== Analysing the profile
 
-Now we have a profile, we can use `go`tool`pprof` to analyse it.
+Now we have a profile, we can use `go tool pprof` to analyse it.
 
 [source]
 % go tool pprof cpu.pprof 
@@ -143,7 +132,7 @@ Showing top 10 nodes out of 57
     0.01s  0.65%   100%      0.01s  0.65%  runtime.memclrNoHeapPointers /Users/dfc/go/src/runtime/memclr_amd64.s
 ----
 
-We see that the [[examples/mandelbrot-pkg-profile/mandelbrot.go][`main.paint`]] function was on the CPU the most when pprof captured the stack.
+We see that the `main.paint` function was on the CPU the most when pprof captured the stack.
 
 Finding `main.paint` on the stack isn't a surprise, this is what the program does; it paints pixels. But what is causing `paint` to spend so much time? We can check that with the _cummulative_ flag to `top`.
 
@@ -151,7 +140,7 @@ Finding `main.paint` on the stack isn't a surprise, this is what the program doe
 ----
 (pprof) top --cum                                   Showing nodes accounting for 1270ms, 83.01% of 1530ms total                                        Showing top 10 nodes out of 57                             
      flat  flat%   sum%        cum   cum%                 
-         0     0%     0%     1530ms   100%  main.main /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go                                                                                     
+         0     0%     0%     1530ms   100%  main.main /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go
          0     0%     0%     1530ms   100%  runtime.main /Users/dfc/go/src/runtime/proc.go                            
      270ms 17.65% 17.65%     1270ms 83.01%  main.fillPixel /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go                                                                                
          0     0% 17.65%     1270ms 83.01%  main.seqFillImg /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go                                                                               
@@ -165,14 +154,19 @@ Finding `main.paint` on the stack isn't a surprise, this is what the program doe
 
 TODO: redo 
 
-This is sort of suggesting that [[examples/mandelbrot-pkg-profile/mandelbrot.go][`main.fillPixed`]] is actually doing most of the work.
+This is sort of suggesting that `main.fillPixed` is actually doing most of the work.
 
-NOTE: You can also visualise the profile with the `web` command, which looks [[examples/mandelbrot-pkg-profile/cpu.svg][like this]].
+[NOTE]
+====
+You can also visualise the profile with the `web` command, which looks like this:
+
+image::../examples/mandelbrot-pkg-profile/cpu.svg[].
+====
 
 == Tracing vs Profiling
 
 Hopefully this example shows the limitations of profiling.
-Profiling told us what it saw, `fillPixel` was doing all the work, and there didn't look like there was much that could be done about that.
+Profiling told us what the profiler saw; `fillPixel` was doing all the work. There didn't look like there was much that could be done about that.
 
 So now it's a good time to introduce the execution tracer which gives a different view of the same program.
 
@@ -199,8 +193,6 @@ user    0m1.707s
 sys     0m0.020s
 ----
 
-=== Using the execution tracer (cont.)
-
 Just like pprof, there is a tool in the `go` command to analyse the trace.
 
 [source,go,options=nowrap]
@@ -211,6 +203,8 @@ Just like pprof, there is a tool in the `go` command to analyse the trace.
 2017/09/17 12:41:40 Splitting trace...
 2017/09/17 12:41:40 Opening browser. Trace viewer s listening on http://127.0.0.1:57842
 ----
+
+This tool is a little bit different to `go tool pprof`. The execution tracer is reusing a lot of the profile visualisation infrastructure built into Chrome, so `go tool trace` acts as a server to translate the raw execution trace into data which Chome can display natively.
 
 === Analysing the trace
 
@@ -223,24 +217,29 @@ include::../examples/mandelbrot-trace/mandelbrot.go[tags=seqfillimg]
 
 This isn't a surprise, by default `mandelbrot.go` calls `fillPixel` for each pixel in each row in sequence.
 
-Once the image is painted, see the execution switches to writing the `.png` file. This generates garbage on the heap, and so the 
+Once the image is painted, see the execution switches to writing the `.png` file.
+This generates garbage on the heap, and so the trace changes at that point, we can see the classic saw tooth pattern of a garbage collected heap.
 
-The trace profile offers timing resolution down to the _microsecond_ level. This is something you just can't get with external profiling.
+The trace profile offers timing resolution down to the _microsecond_ level.
+This is something you just can't get with external profiling.
 
-== go tool trace
-
+[NOTE]
+.go tool trace
+====
 Before we go on there are some things we should talk about the usage of the trace tool.
 
 - The tool uses the javascript debugging support built into Chrome. Trace profiles can only be viewed in Chrome, they won't work in Firefox, Safari, IE/Edge. Sorry.
 - Because this is a Google product, it supports keyboard shortcuts; use `WASD` to navigate, use `?` to get a list.
 - Viewing traces can take a *lot* of memory. Seriously, 4Gb won't cut it, 8Gb is probably the minimum, more is definitely better.
 - If you've installed Go from an OS distribution like Fedora, the support files for the trace viewer may not be part of the main `golang` deb/rpm, they might be in some `-extra` package.
+====
 
 == Using more than one CPU
 
 We saw from the previous trace that the program is running sequentially and not taking advantage of the other CPUs on this machine. 
 
-Mandelbrot generation is known as _embarassingly_parallel_. Each pixel is independant of any other, they could all be computed in parallel.
+Mandelbrot generation is known as _embarassingly_parallel_.
+Each pixel is independant of any other, they could all be computed in parallel.
 So, let's try that.
 
 [source,options=nowrap]
@@ -259,14 +258,12 @@ So the runtime was basically the same. There was more user time, which makes sen
 
 Let's look a the trace.
 
-=== Using more than on CPU (cont.)
-
 As you can see this trace generated _much_ more data.
 
 - It looks like lots of work is being done, but if you zoom right in, there are gaps. This is believed to be the scheduler.
 - While we're using all four cores, because each `fillPixel` is a relatively small amount of work, we're spending a lot of time in scheduling overhead.
 
-=== Batching up work
+== Batching up work
 
 Using one goroutine per pixel was too fine grained. There wasn't enough work to justify the cost of the goroutine.
 
@@ -284,9 +281,7 @@ user    0m1.907s
 sys     0m0.025s
 ----
 
-This looks like a good improvement, we almost halved the runtime of the program. Let's look at the trace
-
-=== Batching up work (cont.)
+This looks like a good improvement, we almost halved the runtime of the program. Let's look at the trace.
 
 As you can see the trace is now smaller and easier to work with.
 We get to see the whole trace in span, which is a nice bonus.
@@ -326,18 +321,17 @@ Looking at the trace you can see that with only one worker process the producer 
 real    0m5.528s
 user    0m7.307s
 sys     0m4.311s
-----       
+----
 
 So that made it worse!
 More real time, more CPU time.
 Let's look at the trace to see what happened.
 
-=== Using workers (cont.)
-
-That trace was a mess.
+That trace is a mess.
 There were more workers available, but the seemed to spend all their time fighting over the work to do.
 
-This is because the channel is unbuffered. An unbuffered channel cannot send until there is someone ready to receive.
+This is because the channel is _unbuffered_.
+An unbuffered channel cannot send until there is someone ready to receive.
 
 - The producer cannot send work until there is a worker ready to receive it.
 - Workers cannot receive work until there is someone ready to send, so they compete with each other when they are waiting.
@@ -346,7 +340,7 @@ This is because the channel is unbuffered. An unbuffered channel cannot send unt
 What we see here is a lot of latency introduced by the unbuffered channel.
 There are lots of stops and starts inside the scheduler, and potentially locks and mutexes while waiting for work, this is why we see the `sys` time higher.
 
-=== Using buffered channels
+== Using buffered channels
 
 [source,go,options=nowrap]
 ----
@@ -369,13 +363,14 @@ Which is pretty close to the per row mode above.
 
 Using a buffered channel the trace showed us that:
 
-- The producer doesn't have to wait for a worker to arrive, it can fill up the channel quickly
+- The producer doesn't have to wait for a worker to arrive, it can fill up the channel quickly.
+- The worker can quickly take the next item from the channel without having to sleep waiting on work to be produced.
 
 Using this method we got nearly the same speed using a channel to hand off work per pixel than we did previously scheduling on goroutine per row.
 
 _Exercise_: modify `nWorkersFillImg` to work per row. Time the result and analyse the trace.
 
-== Break
+=== Break
 
 Let's take a break.
 
@@ -406,13 +401,13 @@ Fortuntately, the `net/http/pprof` package has just such a facility.
 
 Hopefully everyone knows about the `net/http/pprof` package.
 
-When imported
-
 [source,go]
 import _ "net/http/pprof"
 
-It will register tracing and profiling routes with `http.DefaultServeMux`.
+When imported, the `net/http/pprof` will register tracing and profiling routes with `http.DefaultServeMux`.
 Since Go 1.5 this includes the trace profiler.
+
+WARNING: `net/http/pprof` registers with `http.DefaultServeMux`. If you are using that `ServeMux` implicitly, or explicitly, you may inadvertently expose the pprof endpoints to the internet. This can lead to source code disclosure. You probably don't want to do this.
 
 We can grab a five second trace from mandelweb with `curl` (or `wget`)
 
@@ -429,7 +424,7 @@ The previous example was interesting, but an idle webserver has, by definition, 
 Let's start with one request per second.
 
 [source]
-% hey -c 1 -n 1000 -q 1  http://127.0.0.1:8080/mandelbrot
+% hey -c 1 -n 1000 -q 1 http://127.0.0.1:8080/mandelbrot
 
 And with that running, in another window collect the trace
 
@@ -478,6 +473,8 @@ Let's take a look at its operation using the execution tracer.
 
 === User supplied traces
 
+TODO
+
 === More resources
 
 - Rhys Hiltner, https://www.youtube.com/watch?v=mmqDlbWk_XA[Go's execution tracer] (dotGo 2016)
@@ -486,4 +483,4 @@ Let's take a look at its operation using the execution tracer.
 - Dave Cheney, https://dave.cheney.net/training#high-performance-go[High performance Go workshop]]
 - Ivan Daniluk, https://www.youtube.com/watch?v=KyuFeiG3Y60[Visualizing Concurrency in Go] (GopherCon 2016)
 - Kavya Joshi, https://www.youtube.com/watch?v=KBZlN0izeiY[Understanding Channels] (GopherCon 2017)
-- Francesc's talks
+- Francesc Campoy, https://www.youtube.com/watch?v=ySy3sR1LFCQ[Using the Go execution tracer]
