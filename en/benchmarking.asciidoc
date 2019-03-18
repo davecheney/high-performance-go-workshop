@@ -2,7 +2,7 @@
 
 > Measure twice and cut once. -- Ancient proverb
 
-Before we attempt to change a program, first we must know its current performance.
+Before we attempt to improve the performance of a piece of code, first we must know its current performance.
 
 This section focuses on how to construct useful benchmarks using the Go testing framework, and gives practical tips for avoiding the pitfalls.
 
@@ -10,33 +10,38 @@ This section focuses on how to construct useful benchmarks using the Go testing 
 
 Before you benchmark, you must have a stable environment to get repeatable results.
 
-- The machine must be idle—don't profile on shared hardware, don't browse the web while waiting for a long benchmark to run.
-- Watch out for power saving and thermal scaling.
-- Avoid virtual machines and shared cloud hosting; they are too noisy for consistent measurements.
+- The machine must be idle--don't profile on shared hardware, don't browse the web while waiting for a long benchmark to run.
+- Watch out for power saving and thermal scaling. These are almost unavoidable on modern laptops.
+- Avoid virtual machines and shared cloud hosting; they can be too noisy for consistent measurements.
 
-If you can afford it, buy dedicated performance test hardware. Rack it, disable all the power management and thermal scaling and never update the software on those machines.
+If you can afford it, buy dedicated performance test hardware.
+Rack it, disable all the power management and thermal scaling, and never update the software on those machines.
+The last point is poor advice from a system adminstration point of view, but if a software update changes the way the kernel or library performs--think the Spectre patches--this will invalidate any previous benchmarking results.
 
-For everyone else, have a before and after sample and run them multiple times to get consistent results.
+For the rest of us, have a before and after sample and run them multiple times to get consistent results.
 
-## Using the testing package for benchmarking
-The `testing` package has built in support for writing benchmarks. If we have a simple function like this
+== Using the testing package for benchmarking
+
+The `testing` package has built in support for writing benchmarks.
+If we have a simple function like this:
 [source,go]
 ----
 include::../examples/fib/fib_test.go[tags=fib]
 ----
-The we can use the `testing` package to write a _benchmark_ for the function using this form. The benchmark function lives alongside your tests in a `_test.go` file.
+The we can use the `testing` package to write a _benchmark_ for the function using this form.
 [source,go]
 ----
 include::../examples/fib/fib_test.go[tags=benchmarkfib20]
 ----
-Benchmarks are similar to tests.
-The only real difference is they take a `*testing.B` rather than a `*testing.T`.
+The benchmark function lives alongside your tests in a `_test.go` file.
+
+Benchmarks are similar to tests, the only real difference is they take a `*testing.B` rather than a `*testing.T`.
 Both of these types implement the `testing.TB` interface which provides crowd favorites like `Errorf()`, `Fatalf()`, and `FailNow()`.
 
 === Running a package's benchmarks
 
 As benchmarks use the `testing` package they are executed via the `go test` subcommand.
-By default when you invoke `go test` the benchmarks are excluded. 
+However, by default when you invoke `go test`, benchmarks are excluded. 
 
 To explicitly run benchmarks in a package use the `-bench` flag. `-bench` takes a regular expression that matches the names of the benchmarks you want to run, so the most common way to invoke all benchmarks in a package is `-bench=.`.
 Here is an example:
@@ -44,63 +49,73 @@ Here is an example:
 % go test -bench=. ./examples/fib/
 goos: darwin
 goarch: amd64
-BenchmarkFib20-8           30000             44514 ns/op
+BenchmarkFib20-8           30000             40865 ns/op
 PASS
-ok      _/Users/dfc/devel/gophercon2018-performance-tuning-workshop/2-benchmarking/examples/fib 1.795s
+ok      _/Users/dfc/devel/high-performance-go-workshop/examples/fib     1.671s
 
 [NOTE]
 ====
 `go test` will also run all the tests in a package before matching benchmarks, so if you have a lot of tests in a package, or they take a long time to run, you can exclude them by providing `go test`'s `-run` flag with a regex that matches nothing; ie.
-
- go test -run=^$ 
+[source]
+go test -run=^$ 
 ====
 
 === How benchmarks work
 
-Each benchmark function is called with a valid of `b.N`, this is the number of iterations the benchmark should run for.
+Each benchmark function is called with different value for `b.N`, this is the number of iterations the benchmark should run for.
 
-`b.N` starts at 1, if the benchmark function completes in under 1 second (the default), then `b.N` is increased and the benchmark function run again.
+`b.N` starts at 1, if the benchmark function completes in under 1 second--the default--then `b.N` is increased and the benchmark function run again.
 
-`b.N` increases in the approximate sequence; 1, 2, 3, 5, 10, 20, 30, 50, 100, and so on. The benchmark framework tries to be smart and if it sees small values of `b.N` are completing quickly, it will start to increase the sequence faster.
+`b.N` increases in the approximate sequence; 1, 2, 3, 5, 10, 20, 30, 50, 100, and so on. The benchmark framework tries to be smart and if it sees small values of `b.N` are completing relatively quickly, it will increase the the iteration count faster.
 
 Looking at the example above, `BenchmarkFib20-8` found that around 30,000 iterations of the loop took just over a second.
-From there the benchmark framework computed that the average time per operation was 44514ns.
+From there the benchmark framework computed that the average time per operation was 40865ns.
 
 [NOTE]
 ====
-The `-8` suffix relates to the value of `GOMAXPROCS` that was used to run this test. This number, like `GOMAXPROCS`, defaults to the number of CPUs visible to the Go process on startup. You can change this value with the `-cpu` flag which takes a list of values to run the benchmark with.
+The `-8` suffix relates to the value of `GOMAXPROCS` that was used to run this test.
+This number, like `GOMAXPROCS`, defaults to the number of CPUs visible to the Go process on startup.
+You can change this value with the `-cpu` flag which takes a list of values to run the benchmark with.
 [source,options="nowrap"]
 ----
 % go test -bench=. -cpu=1,2,4 ./examples/fib/
 goos: darwin
 goarch: amd64
-BenchmarkFib20             30000             44644 ns/op
-BenchmarkFib20-2           30000             44504 ns/op
-BenchmarkFib20-4           30000             44848 ns/op
+BenchmarkFib20             30000             39115 ns/op
+BenchmarkFib20-2           30000             39468 ns/op
+BenchmarkFib20-4           50000             40728 ns/op
 PASS
+ok      _/Users/dfc/devel/high-performance-go-workshop/examples/fib     5.531s
 ----
 This shows running the benchmark with 1, 2, and 4 cores.
-In this case the flag has no option because this benchmark is entirely sequential. 
+In this case the flag has little effect on the outcome because this benchmark is entirely sequential.
 ====
 
 === Improving benchmark accuracy
 
-The `fib` function is a slightly contrived example -- unless your writing a TechPower web server benchmark, its unlikely your business is going to be gated on how quickly you can compute the 20th number in the Fibonaci sequence.
-But, the benchmark does fulfil what I consider to be a valid benchmark. 
+The `fib` function is a slightly contrived example--unless your writing a TechPower web server benchmark--it's unlikely your business is going to be gated on how quickly you can compute the 20th number in the Fibonaci sequence.
+But, the benchmark does provide a faithful example of a valid benchmark. 
 
-Specifically you want your benchmark to run for several to several thousand iterations so you get a good average per operation.
-If your benchmark runs for only 100's or 10's of iterations, the average of those runs may have a high standard deviation. 
+Specifically you want your benchmark to run for several tens of thousand iterations so you get a good average per operation.
+If your benchmark runs for only 100's or 10's of iterations, the average of those runs may have a high standard deviation.
+If your benchmark runs for millions or billions of iterations, the average may be very accurate, but subject to the vaguaries of code layout and alignment.
 
 To increase the number of iterations, the benchmark time can be increased with the `-benchtime` flag. For example:
 [source,options=nowrap]
 % go test -bench=. -benchtime=10s ./examples/fib/
 goos: darwin
 goarch: amd64
-BenchmarkFib20-8          300000             44616 ns/op
+BenchmarkFib20-8          300000             39318 ns/op
+PASS
+ok      _/Users/dfc/devel/high-performance-go-workshop/examples/fib     20.066s
 
 Ran the same benchmark until it reached a value of `b.N` that took longer than 10 seconds to return.
 As we're running for 10x longer, the total number of iterations is 10x larger.
 The result hasn't changed much, which is what we expected.
+
+====
+Why is the total time reporteded to be 20 seconds, not 10?
+====
 
 If you have a benchmark which runs for millons or billions of iterations resulting in a time per operation in the micro or nano second range, you may find that your benchmark numbers are unstable because thermal scaling, memory locality, background processing, gc activity, etc.
 
@@ -130,7 +145,7 @@ _Exercise_: Try running the fib bench above with a `-benchtime` of 10, 20, 50, 1
 
 TIP: If you find that the defaults that `go test` applies need to be tweaked for a particular package, I suggest codifying those settings in a `Makefile` so everyone who wants to run your benchmarks can do so with the same settings.
 
-== Benchstat
+== Comparing benchmarks with benchstat
 
 In the previous section I suggested running benchmarks more than once to get more data to average.
 This is good advice for any benchmark because of the effects of power management, background processes, and thermal management that I mentioned at the start of the chapter.
@@ -172,8 +187,7 @@ This is pretty good for battery power.
 - The next two runs are the fastest, because the operating system as decided that this isn't a transient spike of work and it has boosted up the clock speed to get through the work as quick as possible in the hope of being able to go back to sleep.
 - The remaining runs are the operating system and the bios trading power consumption for heat production.
 
-== Comparing benchmarks with benchstat
-
+=== Improve `Fib`
 Determining the performance delta between two sets of benchmarks can be tedious and error prone. Benchstat can help us with this. 
 
 [TIP]
@@ -185,14 +199,13 @@ Saving the output from a benchmark run is useful, but you can also save the _bin
 ----
 ====
 
-=== Improve `Fib`
 The previous `Fib` fuction had hard coded values for the 0th and 1st numbers in the fibonaci series. After that the code calls itself recursively.
 We'll talk about the cost of recursion later today, but for the moment, assume it has a cost, especially as our algorithm uses exponential time.
 
 As simple fix to this would be to hard code another number from the fibonacci series, reducing the depth of each recusive call by one.
 [source,go,options=nowrap]
 ----
-include::../examples/fib/fib_nobuild.go[tags=fib]
+include::{docdir}/../examples/fib/fib_nobuild.go[tags=fib]
 ----
 
 TIP: This file also includes a comprehensive test for `Fib`. Don't try to improve your benchmarks without a test that verifies the current behaviour.

@@ -88,7 +88,7 @@ is equivalent to
          mu.Unlock()
  }()
 
-# talk about unwinding costs
+TODO  talk about unwinding costs
 
 `defer` is expensive if the work being done is small, the classic example is `defer` ing a mutex unlock around a struct variable or map lookup. You may choose to avoid `defer` in those situations.
 
