@@ -9,6 +9,8 @@ Dave Cheney <dave@cheney.net>
 :sectnums:
 :toc:
 :homepage: https://dave.cheney.net/high-performance-go-workshop/en/[Practical Go]
+:source-highlighter: pygments
+:source-language: bash
 
 :numbered!:
 

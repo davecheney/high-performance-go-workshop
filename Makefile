@@ -23,7 +23,8 @@ pdf: $(OUTPUT)/$(TITLE).pdf
 epub: $(OUTPUT)/$(TITLE).epub
 
 $(SITE)/%.html: $(LANG)/%.asciidoc $(CURDIR)/Makefile
-	asciidoctor -b html5 \
+	docker run -it -v $(CURDIR):/documents -v $(OUTPUT):$(OUTPUT) asciidoctor/docker-asciidoctor \
+		asciidoctor -b html5 \
 		--failure-level=WARN \
 		-a revnumber=$(GIT_VERSION) \
 		-a exampledir=$(EXAMPLEDIR) \

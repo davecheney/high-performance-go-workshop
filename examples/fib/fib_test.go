@@ -25,7 +25,7 @@ func BenchmarkFib20(b *testing.B) {
 
 // end::benchmarkfib20[]
 
-func BenchmarkFib1(b *testing.B) {
+func benchmarkFib1(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		Fib(1)
 	}
