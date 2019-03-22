@@ -8,9 +8,10 @@ Dave Cheney <dave@cheney.net>
 :appendix-caption: Appx
 :sectnums:
 :toc:
-:homepage: https://dave.cheney.net/high-performance-go-workshop/en/[Practical Go]
+:homepage: https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html
+:shortlink: http://bit.ly/dotgo2019
+:github: https://github.com/davecheney/high-performance-go-workshop
 :source-highlighter: pygments
-:source-language: bash
 
 :numbered!:
 
@@ -24,10 +25,12 @@ Through the day we'll work from the small -- learning how to write benchmarks, t
 ====
 You can find the latest version of this presentation at
 
-{homepage}
+{shortlink}
 ====
 
-=== Schedule (approx.)
+=== Schedule
+
+Here's the (approximate) schedule for the day.
 
 [cols=2*,options="header"]
 |=== 

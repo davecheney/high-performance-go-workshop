@@ -22,11 +22,12 @@ I believe the same is true for us as software engineers. I don’t think any of 
 
 There’s a common internet meme that goes something like this;
 
-image::images/images/jalopnik.png[]
+image::images/jalopnik.png[]
 
 Of course this is preposterous, but it underscores just how much has changed in the computing industry.
 
-As software authors all of us in this room have benefited from Moore's Law, the doubling of the number of available transistors on a chip every 18 months, for 50 years. *No other industry has experienced a four order of magnitude improvement in their tools in the space of a lifetime*.
+As software authors all of us in this room have benefited from Moore's Law, the doubling of the number of available transistors on a chip every 18 months, for 50 years.
+No other industry has experienced a _four order of magnitude_ improvement in their tools in the space of a lifetime.
 
 But this is all changing.
 
@@ -41,7 +42,7 @@ If computers are still getting faster then maybe we don’t need to care about t
 This is the classic data you’ll find in textbooks like _Computer Architecture, A Quantitative Approach_ by John L. Hennessy and David A. Patterson.
 This graph was taken from the 5th edition
 
-image::images/cpu-performance.png[]
+image::https://community.cadence.com/cfs-file/__key/communityserver-blogs-components-weblogfiles/00-00-00-01-06/2313.processorperf.jpg[]
 
 In the 5th edition, Hennessey and Patterson argue that there are three eras of computing performance
 
@@ -55,13 +56,18 @@ image::images/int_graph.png[]
 
 So this is the same graph using Spec data from 1995 til 2017.
 
-To me, rather than the step change we saw in the 2012 data, I’d say that _single core_ performance is approaching a limit. The numbers are slightly better for floating point, but for us in the room doing line of business applications, this is probably not that relevant.
+To me, rather than the step change we saw in the 2012 data, I’d say that _single core_ performance is approaching a limit.
+The numbers are slightly better for floating point, but for us in the room doing line of business applications, this is probably not that relevant.
 
 === Yes, computer are still getting faster, slowly
 
-> The first thing to remember about the ending of Moore's law is something Gordon Moore told me. He said "All exponentials come to an end". -- https://www.youtube.com/watch?v=Azt8Nc-mtKM[John Hennessy]
+> The first thing to remember about the ending of Moore's law is something Gordon Moore told me.
+He said "All exponentials come to an end". -- https://www.youtube.com/watch?v=Azt8Nc-mtKM[John Hennessy]
 
-This is Hennessy's quote from Google Next 18 and his Turing Award lecture. His contention is yes, CPU performance is still improving. However, single threaded integer performance is still improving around 3% per year. At this rate its going to take 20 years of compounding growth to double integer performance. Compare that to the go-go days of the 90's where performance was doubling every two years.
+This is Hennessy's quote from Google Next 18 and his Turing Award lecture.
+His contention is yes, CPU performance is still improving.
+However, single threaded integer performance is still improving around 3% per year.
+At this rate its going to take 20 years of compounding growth to double integer performance. Compare that to the go-go days of the 90's where performance was doubling every two years.
 
 Why is this happening?
 
@@ -69,7 +75,10 @@ Why is this happening?
 
 image::images/stuttering.png[]
 
-This graph from 2015 demonstrates this well. The top line shows the number of transistors on a die. This has continued in a roughly linear trend line since the 1970's. As this is a log/lin graph this linear series represents exponential growth.
+This graph from 2015 demonstrates this well.
+The top line shows the number of transistors on a die.
+This has continued in a roughly linear trend line since the 1970's.
+As this is a log/lin graph this linear series represents exponential growth.
 
 However, If we look at the middle line, we see clock speeds have not increased in a decade, we see that cpu speeds stalled around 2004
 
@@ -77,9 +86,11 @@ The bottom graph shows thermal dissipation power; that is electrical power that 
 
 == Heat
 
-Why does a CPU produce heat? It's a solid state device, there are no moving components, so effects like friction are not (directly) relevant here.
+Why does a CPU produce heat?
+It's a solid state device, there are no moving components, so effects like friction are not (directly) relevant here.
 
-This digram is taken from a great [data sheet produced by TI][7]. In this model the switch in N typed devices is attracted to a positive voltage P type devices are repelled from a positive voltage.
+This digram is taken from a great [data sheet produced by TI][7].
+In this model the switch in N typed devices is attracted to a positive voltage P type devices are repelled from a positive voltage.
 
 image::images/cmos-inverter.png[]
 
@@ -91,13 +102,13 @@ The power consumption of a CMOS device, which is what every transistor in this r
 
 == The end of Dennard scaling
 
-To understand what happened next we need to look to a paper written in 1974 co-authored by (https://en.wikipedia.org/wiki/Robert_H._Dennard[Robert H. Dennard].
-Dennard's Scaling law states roughly that as transistors get smaller their (https://en.wikipedia.org/wiki/Power_density[power density] stays constant.
+To understand what happened next we need to look to a paper written in 1974 co-authored by https://en.wikipedia.org/wiki/Robert_H._Dennard[Robert H. Dennard].
+Dennard's Scaling law states roughly that as transistors get smaller their https://en.wikipedia.org/wiki/Power_density[power density] stays constant.
 Smaller transistors can run at lower voltages, have lower gate capacitance, and switch faster, which helps reduce the amount of dynamic power.
 
 So how did that work out?
 
-image::images/power-density.png[]
+image::http://semiengineering.com/wp-content/uploads/2014/04/Screen-Shot-2014-04-14-at-8.49.48-AM.png[]
 
 It turns out not so great. As the gate length of the transistor approaches the width of a few silicon atom, the relationship between transistor size, voltage, and importantly leakage broke down. 
 
@@ -113,41 +124,55 @@ The primary goal is to keep power consumption, and thus heat dissipation, https:
 
 image::images/stuttering.png[]
 
-But, there is one part of the graph that is continuing to increase, the number of transistors on a die. The march of cpu features size, more transistors in the same given area, has both positive and negative effects.
+But, there is one part of the graph that is continuing to increase, the number of transistors on a die.
+The march of cpu features size, more transistors in the same given area, has both positive and negative effects.
 
 Also, as you can see in the insert, the cost per transistor continued to fall until around 5 years ago, and then the cost per transistor started to go back up again.
 
-image::images/gate-length.png[]
+image::https://whatsthebigdata.files.wordpress.com/2016/08/moores-law.png[]
 
-Not only is it getting more expensive to create smaller transistors, it’s getting harder. This report from 2016 shows the prediction of what the chip makers believed would occur in 2013; two years later they had missed all their predictions, and while I don’t have an updated version of this report, there are no signs that they are going to be able to reverse this trend. 
+Not only is it getting more expensive to create smaller transistors, it’s getting harder.
+This report from 2016 shows the prediction of what the chip makers believed would occur in 2013; two years later they had missed all their predictions, and while I don’t have an updated version of this report, there are no signs that they are going to be able to reverse this trend. 
 
 It is costing intel, TSMC, AMD, and Samsung billions of dollars because they have to build new fabs, buy all new process tooling. So while the number of transistors per die continues to increase, their unit cost has started to increase.
 
-NOTE: Even the term gate length, measured in nano meters, has become ambiguous. Various manufacturers measure the size of their transistors in different ways allowing them to demonstrate a smaller number than their competitors without perhaps delivering. This is the Non-GAAP Earning reporting model of CPU manufacturers.
+[NOTE]
+====
+Even the term gate length, measured in nano meters, has become ambiguous.
+Various manufacturers measure the size of their transistors in different ways allowing them to demonstrate a smaller number than their competitors without perhaps delivering.
+This is the Non-GAAP Earning reporting model of CPU manufacturers.
+====
 
 == More cores
 
 image::images/highrescpudies_fullyc_020-1105.png[]
 
-With thermal and frequency limits reached it’s no longer possible to make a single core run twice as fast. But, if you add another cores you can provide twice the processing capacity — if the software can support it.
+With thermal and frequency limits reached it’s no longer possible to make a single core run twice as fast.
+But, if you add another cores you can provide twice the processing capacity — if the software can support it.
 
-In truth, the core count of a CPU is dominated by heat dissipation. The end of Dennard scaling means that the clock speed of a CPU is some arbitrary number between 1 and 4 Ghz depending on how hot it is. We'll see this shortly when we talk about benchmarking.
+In truth, the core count of a CPU is dominated by heat dissipation.
+The end of Dennard scaling means that the clock speed of a CPU is some arbitrary number between 1 and 4 Ghz depending on how hot it is.
+We'll see this shortly when we talk about benchmarking.
 
 == Amdahl's law
 
-CPUs are not getting faster, but they are getting wider with hyper threading and multiple cores. Dual core on mobile parts, quad core on desktop parts, dozens of cores on server parts. Will this be the future of computer performance? Unfortunately not.
+CPUs are not getting faster, but they are getting wider with hyper threading and multiple cores.
+Dual core on mobile parts, quad core on desktop parts, dozens of cores on server parts.
+Will this be the future of computer performance? Unfortunately not.
 
 Amdahl's law, named after the Gene Amdahl the designer of the IBM/360, is a formula which gives the theoretical speedup in latency of the execution of a task at fixed workload that can be expected of a system whose resources are improved.
 
-image::images/AmdahlsLaw.svg[]
+image::https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/AmdahlsLaw.svg/400px-AmdahlsLaw.svg.png[]
 
-Amdahl's law tells us that the maximum speedup of a program is limited by the sequential parts of the program. If you write a program with 95% of its execution able to be run in parallel, even with thousands of processors the maximum speedup in the programs execution is limited to 20x. 
+Amdahl's law tells us that the maximum speedup of a program is limited by the sequential parts of the program.
+If you write a program with 95% of its execution able to be run in parallel, even with thousands of processors the maximum speedup in the programs execution is limited to 20x. 
 
 Think about the programs that you work on every day, how much of their execution is parralisable?
 
 == Dynamic Optimisations
 
-With clock speeds stalled and limited returns from throwing extra cores at the problem, where are the speedups coming from? They are coming from architectural improvements in the chips themselves.
+With clock speeds stalled and limited returns from throwing extra cores at the problem, where are the speedups coming from?
+They are coming from architectural improvements in the chips themselves.
 These are the big five to seven year projects with names like https://en.wikipedia.org/wiki/List_of_Intel_CPU_microarchitectures#Pentium_4_/_Core_Lines[Nehalem, Sandy Bridge, and Skylake]. 
 
 Much of the improvement in performance in the last two decades has come from architectural improvements:
@@ -289,5 +314,3 @@ But there is good news, there is a tonne of improvements we can make in software
 - https://www.youtube.com/watch?v=HnniEPtNs-4[50 Years of Computer Architecture: From Mainframe CPUs to DNN TPUs, David Patterson]
 
 [4]: https://www.youtube.com/watch?v=LgLNyMAi-0I&list=PLFls3Q5bBInj_FfNLrV7gGdVtikeGoUc9
-
-[7]: http://www.ti.com/lit/an/scaa035b/scaa035b.pdf

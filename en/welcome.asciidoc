@@ -21,13 +21,13 @@ This presentation is licensed under the https://creativecommons.org/licenses/by-
 
 The are several software downloads you will need today.
 
-Download this repo on {homepage}
+Download this repo on {github}
 
 === Laptop, power supplies, etc.
 
 The workshop material targets Go 1.12.
 
-https://golang.org/dl/[**Download Go 1.12**]
+https://golang.org/dl/[Download Go 1.12]
 
 NOTE: If you've already upgraded to Go 1.13 that's ok. There are always some small changes to optimisation choices between minor Go releases and I'll try to point those out as we go along.
 

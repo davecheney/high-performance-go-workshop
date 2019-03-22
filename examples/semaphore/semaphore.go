@@ -2,7 +2,7 @@ package p
 
 type Work int
 
-// START OMIT
+// tag::semaphore[]
 var semaphore = make(chan struct{}, 10)
 
 func processRequest(work *Work) {
@@ -11,4 +11,4 @@ func processRequest(work *Work) {
 	<-semaphore // release semaphore
 }
 
-// END OMIT
+// end::semaphore[]

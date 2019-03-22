@@ -74,7 +74,10 @@ You need to set a timeout on every network request you make with `SetDeadline`, 
 
 You need to limit the amount of blocking IO you issue. Use a pool of worker goroutines, or a buffered channel as a semaphore.
 
-.code examples/semaphore.go /START OMIT/,/END OMIT/
+[source,go,options=nowrap]
+----
+include::../examples/semaphore/semaphore.go[tags=semaphore]
+----
 
 == Defer is expensive, or is it?
 
@@ -134,7 +137,9 @@ For best performance I recommend avoiding cgo in your applications.
 
 Is there anyone who's using cgo to call expensive C code frequently?
 
-.link http://dave.cheney.net/2016/01/18/cgo-is-not-go Further reading: cgo is not Go.
+==== Further reading
+
+- http://dave.cheney.net/2016/01/18/cgo-is-not-go[cgo is not Go]
 
 == Always use the latest released version of Go
 
@@ -147,8 +152,10 @@ Old versions of Go will never get better. They will never get bug fixes or optim
 
 Old version of Go receive no updates. Do not use them. Use the latest and you will get the best performance.
 
-.link http://dave.cheney.net/2016/04/02/go-1-7-toolchain-improvements Go 1.7 toolchain improvements
-.link http://dave.cheney.net/2016/09/18/go-1-8-performance-improvements-one-month-in Go 1.8 performance improvements
+=== Further reading
+
+- http://dave.cheney.net/2016/04/02/go-1-7-toolchain-improvements[Go 1.7 toolchain improvements]
+- http://dave.cheney.net/2016/09/18/go-1-8-performance-improvements-one-month-in[Go 1.8 performance improvements]
 
 === strings.Builder
 
