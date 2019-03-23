@@ -1,3 +1,4 @@
+[#compiler-optimisation]
 = Compiler optimisations
 
 This section covers three important optimisations that the Go compiler performs.

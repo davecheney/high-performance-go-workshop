@@ -1,3 +1,4 @@
+[#profiling]
 = Performance measurement and profiling
 
 In the previous section we looked at benchmarking individual functions which is useful when you know ahead of time where the bottlekneck is. However, often you will find yourself in the position of asking

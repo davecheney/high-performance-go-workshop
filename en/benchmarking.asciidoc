@@ -1,3 +1,4 @@
+[#benchmarking]
 = Benchmarking
 
 > Measure twice and cut once. -- Ancient proverb

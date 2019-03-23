@@ -1,3 +1,4 @@
+[#introduction]
 = The past, present, and future of Microprocessor performance
 
 This is a workshop about writing high performance code. In other workshops I talk about decoupled design and maintainability, but we’re here today to talk about performance.
@@ -16,7 +17,8 @@ The name "Mechanical Sympathy" comes from the great racing car driver Jackie Ste
 
 To be a great race car driver, you don’t need to be a great mechanic, but you need to have more than a cursory understanding of how a motor car works.
 
-I believe the same is true for us as software engineers. I don’t think any of us in this room will be a professional CPU designer, but that doesn’t mean we can ignore the problems that CPU designers face.
+I believe the same is true for us as software engineers.
+I don’t think any of us in this room will be a professional CPU designer, but that doesn’t mean we can ignore the problems that CPU designers face.
 
 == Six orders of magnitude
 
@@ -26,8 +28,8 @@ image::images/jalopnik.png[]
 
 Of course this is preposterous, but it underscores just how much has changed in the computing industry.
 
-As software authors all of us in this room have benefited from Moore's Law, the doubling of the number of available transistors on a chip every 18 months, for 50 years.
-No other industry has experienced a _four order of magnitude_ improvement in their tools in the space of a lifetime.
+As software authors all of us in this room have benefited from Moore's Law, the doubling of the number of available transistors on a chip every 18 months, for 40 years.
+No other industry has experienced a _six order of magnitude footnote:[Hennessy et al: 1.4x annual performance improvment over 40 years.]_ improvement in their tools in the space of a lifetime.
 
 But this is all changing.
 
@@ -66,7 +68,7 @@ He said "All exponentials come to an end". -- https://www.youtube.com/watch?v=Az
 
 This is Hennessy's quote from Google Next 18 and his Turing Award lecture.
 His contention is yes, CPU performance is still improving.
-However, single threaded integer performance is still improving around 3% per year.
+However, single threaded integer performance is still improving around 2-3% per year.
 At this rate its going to take 20 years of compounding growth to double integer performance. Compare that to the go-go days of the 90's where performance was doubling every two years.
 
 Why is this happening?
@@ -89,16 +91,16 @@ The bottom graph shows thermal dissipation power; that is electrical power that 
 Why does a CPU produce heat?
 It's a solid state device, there are no moving components, so effects like friction are not (directly) relevant here.
 
-This digram is taken from a great [data sheet produced by TI][7].
+This digram is taken from a great http://www.ti.com/lit/an/scaa035b/scaa035b.pdf[data sheet produced by TI].
 In this model the switch in N typed devices is attracted to a positive voltage P type devices are repelled from a positive voltage.
 
 image::images/cmos-inverter.png[]
 
 The power consumption of a CMOS device, which is what every transistor in this room, on your desk, and in your pocket, is made from, is combination of three factors.
 
-1. Static power. When a transistor is static, that is, not changing its state, there is a small amount of current that leaks through the transistor to ground. The smaller the transistor, the more leakage. Leakage increases with temperature. Even a minute amount of leakage adds up when you have billions of transistors!
-2. Dynamic power. When a transistor transitions from one state to another, it must charge or discharge the various capacitances it is connected to the gate. Dynamic power per transistor is the voltage squared times the capacitance and the frequency of change. Lowering the voltage can reduce the power consumed by a transistor, but lower voltages causes the transistor to switch slower.
-3. Crowbar, or short circuit current. We like to think of transistors as digital devices occupying one state or another, off or on, atomically. In reality a transistor is an analog device. As a switch a transistor starts out _mostly_ off, and transitions, or switches, to a state of being _mostly_ on. This transition or switching time is very fast, in modern processors it is in the order of pico seconds, but that still represents a period of time when there is a low resistance path from Vcc to ground. The faster the transistor  switches, its frequency, the more heat is dissipated.
+. Static power. When a transistor is static, that is, not changing its state, there is a small amount of current that leaks through the transistor to ground. The smaller the transistor, the more leakage. Leakage increases with temperature. Even a minute amount of leakage adds up when you have billions of transistors!
+. Dynamic power. When a transistor transitions from one state to another, it must charge or discharge the various capacitances it is connected to the gate. Dynamic power per transistor is the voltage squared times the capacitance and the frequency of change. Lowering the voltage can reduce the power consumed by a transistor, but lower voltages causes the transistor to switch slower.
+. Crowbar, or short circuit current. We like to think of transistors as digital devices occupying one state or another, off or on, atomically. In reality a transistor is an analog device. As a switch a transistor starts out _mostly_ off, and transitions, or switches, to a state of being _mostly_ on. This transition or switching time is very fast, in modern processors it is in the order of pico seconds, but that still represents a period of time when there is a low resistance path from Vcc to ground. The faster the transistor  switches, its frequency, the more heat is dissipated.
 
 == The end of Dennard scaling
 
@@ -113,7 +115,7 @@ image::http://semiengineering.com/wp-content/uploads/2014/04/Screen-Shot-2014-04
 It turns out not so great. As the gate length of the transistor approaches the width of a few silicon atom, the relationship between transistor size, voltage, and importantly leakage broke down. 
 
 It was postulated at the https://pdfs.semanticscholar.org/6a82/1a3329a60def23235c75b152055c36d40437.pdf[Micro-32 conference in 1999] that if we followed the trend line of increasing clock speed and shrinking transistor dimensions then within a processor generation the transistor junction would approach the temperature of the core of a nuclear reactor.
- Obviously this is was lunacy.
+Obviously this is was lunacy.
 The Pentium 4 https://arstechnica.com/uncategorized/2004/10/4311-2/[marked the end of the line] for single core, high frequency, consumer CPUs. 
 
 Returning to this graph, we see that the reason clock speeds have stalled is because cpu’s exceeded our ability to cool them. By 2006 reducing the size of the transistor no longer improved its power efficiency.
@@ -145,7 +147,7 @@ This is the Non-GAAP Earning reporting model of CPU manufacturers.
 
 == More cores
 
-image::images/highrescpudies_fullyc_020-1105.png[]
+image::https://i.redd.it/y5cdp7nhs2uy.jpg[]
 
 With thermal and frequency limits reached it’s no longer possible to make a single core run twice as fast.
 But, if you add another cores you can provide twice the processing capacity — if the software can support it.
@@ -265,6 +267,7 @@ Memory is slow, caches are too small, CPU clock speeds are going backwards, and 
 
 Moore's Law is still in effect, but for all of us in this room, the free lunch is over.
 
+[#conc]
 == Conclusion
 
 > The numbers I would cite would be by 2010: 30GHz, 10billion transistors, and 1 tera-instruction per second. -- https://www.cnet.com/news/intel-cto-chip-heat-becoming-critical-issue/[Pat Gelsinger, Intel CTO, April 2002]
@@ -281,7 +284,7 @@ All agree that our current sequential programming languages will not be compatib
 
 My view is that these predictions are correct, the outlook for hardware manufacturers saving us at this point is grim.
 However, there is _enormous_ scope to optimise the programs today we write for the hardware we have today.
-Rick Hudson spoke at GopherCon 2015 about https://talks.golang.org/2015/go-gc.pdf[re engaging with a "virtuous cycle"] of software that works _with_ the hardware we have today, not indiferent of it.
+Rick Hudson spoke at GopherCon 2015 about https://talks.golang.org/2015/go-gc.pdf[reengaging with a "virtuous cycle"] of software that works _with_ the hardware we have today, not indiferent of it.
 
 Looking at the graphs I showed earlier, from 2015 to 2018 with at best a 5-8% improvement in integer performance and less than that in memory latency, the Go team have decreased the garbage collector pause times by https://blog.golang.org/ismmkeynote[two orders of magnitude].
 A Go 1.11 program exhibits significantly better GC latency than the same program on the same hardware using Go 1.6.
@@ -309,8 +312,7 @@ But there is good news, there is a tonne of improvements we can make in software
 
 === Further reading
 
-- [The future of computing: a conversation with John Hennessy][2]  (Google I/O '18)
-- https://www.youtube.com/watch?v=zX4ZNfvw1cw[The Future of Microprocessors] JuliaCon 2018
+- https://www.youtube.com/watch?v=zX4ZNfvw1cw[The Future of Microprocessors, Sophie Wilson] JuliaCon 2018
 - https://www.youtube.com/watch?v=HnniEPtNs-4[50 Years of Computer Architecture: From Mainframe CPUs to DNN TPUs, David Patterson]
-
-[4]: https://www.youtube.com/watch?v=LgLNyMAi-0I&list=PLFls3Q5bBInj_FfNLrV7gGdVtikeGoUc9
+- https://web.stanford.edu/~hennessy/Future%20of%20Computing.pdf[The Future of Computing, John Hennessy]
+- https://www.youtube.com/watch?v=Azt8Nc-mtKM[The future of computing: a conversation with John Hennessy]  (Google I/O '18)

@@ -1,3 +1,4 @@
+[#tips-and-tricks]
 = Tips and trips
 A random grab back of tips and suggestions
 

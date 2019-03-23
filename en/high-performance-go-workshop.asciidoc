@@ -6,6 +6,8 @@ Dave Cheney <dave@cheney.net>
 :idprefix:
 :sectids:
 :appendix-caption: Appx
+:sectanchors:
+:sectlinks:
 :sectnums:
 :toc:
 :homepage: https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html
@@ -37,17 +39,17 @@ Here's the (approximate) schedule for the day.
 | Start
 | Description
 
-| 09:00 | Welcome and introduction
-| 09:30 | Benchmarking
+| 09:00 | <<welcome>> and <<introduction,Introduction>>
+| 09:30 | <<benchmarking>>
 | 10:45	| Break (15 minutes)
-| 11:00	| Profiling
+| 11:00	| <<profiling>>
 | 12:00	| Lunch (90 minutes)
-| 13:30	| Execution tracer
-| 14:30	| Compiler optimisation
+| 13:30	| <<compiler-optimisation>>
+| 14:30	| <<execution-tracer>>
 | 15:15	| Break (15 minutes)
-| 15:30	| Tips and tricks
+| 15:30	| <<tips-and-tricks>>
 | 16:00	| Exercises
-| 16:45	| Final Questions and conclusion
+| 16:45	| <<conclusion>>
 | 17:00	| Close
 |===
 
@@ -74,7 +76,8 @@ include::tips-and-tricks.asciidoc[]
 :leveloffset: -1
 
 :numbered!:
-== Conclusion
+[#conclusion]
+== Final Questions and Conclusion
 
 > Readable means reliable -- Rob Pike
 
