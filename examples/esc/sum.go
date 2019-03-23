@@ -17,9 +17,9 @@ func Sum() int {
 	return sum
 }
 
-// end::sum[]
-
 func main() {
 	answer := Sum()
 	fmt.Println(answer)
 }
+
+// end::sum[]

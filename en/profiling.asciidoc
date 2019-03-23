@@ -1,6 +1,8 @@
 [#profiling]
 = Performance measurement and profiling
 
+:svg-inline: width='100%',height='100%',opts=inline
+
 In the previous section we looked at benchmarking individual functions which is useful when you know ahead of time where the bottlekneck is. However, often you will find yourself in the position of asking
 
 > Why is this program taking so long to run?
@@ -108,7 +110,7 @@ func main() {
 ----
 We'll use the profile package throughout this section. Later in the day we'll touch on using the `runtime/pprof` interface directly.
 
-== Analysting a profile with pprof
+== Analysing a profile with pprof
 
 Now that we've talked about what pprof can measure, and how to generate a profile, let's talk about how to use pprof to analyse a profile.
 
@@ -206,9 +208,18 @@ Showing nodes accounting for 1.42s, 100% of 1.42s total
 ----
 The `top` command is one you'll use the most. We can see that 99% of the time this program spends in `syscall.Syscall`, and a small part in `main.readbyte`. 
 
-We can also visualise this call the with the `web` command. This will generate a directed graph from the profile data. Under the hood this uses the `dot` command from Graphviz.
+We can also visualise this call the with the `web` command.
+This will generate a directed graph from the profile data. Under the hood this uses the `dot` command from Graphviz.
 
-image::images/profile001.svg[]
+However, in Go 1.10 (possibly 1.11) Go ships with a version of pprof that natively supports a http sever
+
+[source]
+% go tool pprof -http=:8080 /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile239941020/cpu.pprof
+
+Will open a web browser;
+
+- Graph mode
+- Flame graph mode
 
 On the graph the box that consumes the _most_ CPU time is the largest -- we see `sys call.Syscall` at 99.3% of the total time spent in the program.
 The string of boxes leading to `syscall.Syscall` represent the immediate callers -- there can be more than one if multiple code paths converge on the same function.
@@ -247,9 +258,13 @@ Then run the program as usual
 "moby.txt": 181275 words
 2018/08/25 14:41:15 profile: memory profiling disabled, /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile312088211/mem.pprof
 
-image::images/memprof.png[]
+image::../images/mem-profile.svg[{svg-inline}]
 
 As we suspected the allocation was coming from `readbyte` -- this wasn't that complicated, readbyte is three lines long:
+
+====
+Use pprof to determine where the allocation is coming from.
+====
 
 [source,go]
 ----
@@ -289,16 +304,16 @@ The program is annotation with the `profile` package, and we set the memory prof
 Lets look at the graph of allocated objects, this is the default, and shows the call graphs that lead to the allocation of every object during the profile.
 
 [source,options=nowrap]
-% go tool pprof -web -alloc_objects /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile891268605/mem.pprof
+% go tool pprof -http=:8080 /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile891268605/mem.pprof
 
-image::images/alloc_objects.svg[]
+image::../images/alloc_objects.svg[{svg-inline}]
 
 Not surprisingly more than 99% of the allocations were inside `makeByteSlice`. Now lets look at the same profile using `-inuse_objects`
 
 [source,options=nowrap]
-% go tool pprof -web -inuse_objects /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile891268605/mem.pprof
+% go tool pprof -http=:8080 /var/folders/by/3gf34_z95zg05cyj744_vhx40000gn/T/profile891268605/mem.pprof
 
-image::images/inuse_objects.svg[]
+image::../images/inuse_objects.svg[{svg-inline}]
 
 What we see is not the objects that were _allocated_ during the profile, but the objects that remain _in use_, at the time the profile was taken -- this ignores the stack trace for objects which have been reclaimed by the garbage collector.
 
@@ -307,9 +322,17 @@ The last profile type we'll look at is block profiling. We'll use the `ClientSer
 
 [source,options=nowrap]
 % go test -run=XXX -bench=ClientServer$ -blockprofile=/tmp/block.p net/http
-% go tool pprof -web /tmp/block.p
+% go tool pprof -http=:8080 /tmp/block.p
 
-image::images/blockprof.png[]
+image::../images/block-profile.svg[{svg-inline}]
+
+=== Thread creation profiling
+
+Go 1.11 (?) added support for profiling the creation of operating system threads.
+
+====
+Add thread creation profiling to `godoc` and observe the results of profiling `godoc -http=:8080 -index`.
+====
 
 === Framepointers
 
@@ -319,9 +342,7 @@ The frame pointer is a register that always points to the top of the current sta
 
 Framepointers enable tools like `gdb(1)`, and `perf(1)` to understand the Go call stack.
 
-We won't cover these tools in this workshop, but you can read and watch a presentation I gave on seven different ways to profile Go programs.
-
-==== Further reading:
+We won't cover these tools in this workshop, but you can read and watch a presentation I gave on seven different ways to profile Go programs. 
 
 - https://talks.godoc.org/github.com/davecheney/presentations/seven.slide[Seven ways to profile a Go program] (slides)
 - https://www.youtube.com/watch?v=2h_NFBFrciI[Seven ways to profile a Go program] (video, 30 mins)
