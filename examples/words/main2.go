@@ -15,6 +15,7 @@ func readbyte(r io.Reader) (rune, error) {
 	return rune(buf[0]), err
 }
 
+// tag::main[]
 func main() {
 	f, err := os.Open(os.Args[1])
 	if err != nil {
@@ -40,3 +41,5 @@ func main() {
 	}
 	fmt.Printf("%q: %d words\n", os.Args[1], words)
 }
+
+// end::main[]

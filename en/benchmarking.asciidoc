@@ -34,7 +34,7 @@ The we can use the `testing` package to write a _benchmark_ for the function usi
 ----
 include::../examples/fib/fib_test.go[tags=benchmarkfib20]
 ----
-The benchmark function lives alongside your tests in a `_test.go` file.
+TIP: The benchmark function lives alongside your tests in a `_test.go` file.
 
 Benchmarks are similar to tests, the only real difference is they take a `*testing.B` rather than a `*testing.T`.
 Both of these types implement the `testing.TB` interface which provides crowd favorites like `Errorf()`, `Fatalf()`, and `FailNow()`.
@@ -142,7 +142,9 @@ A benchmark of `Fib(1)` takes around 2 nano seconds with a variance of +/- 2%.
 
 New in Go 1.12 is the `-benchtime` flag now takes a number of iterations, eg. `-benchtime=20x` which will run your code exactly `benchtime` times. 
 
-_Exercise_: Try running the fib bench above with a `-benchtime` of 10, 20, 50, 100, and 300x. What do you see?
+====
+Try running the fib bench above with a `-benchtime` of 10x, 20x, 50x, 100x, and 300x. What do you see?
+====
 
 TIP: If you find that the defaults that `go test` applies need to be tweaked for a particular package, I suggest codifying those settings in a `Makefile` so everyone who wants to run your benchmarks can do so with the same settings.
 
@@ -162,24 +164,22 @@ Benchstat can take a set of benchmark runs and tell you how stable they are. Her
 % go test -bench=Fib20 -count=10 ./examples/fib/ | tee old.txt
 goos: darwin
 goarch: amd64
-BenchmarkFib20-8           30392             42354 ns/op
-BenchmarkFib20-8           29124             38806 ns/op
-BenchmarkFib20-8           30405             39404 ns/op
-BenchmarkFib20-8           30369             38982 ns/op
-BenchmarkFib20-8           30076             38400 ns/op
-BenchmarkFib20-8           30153             38749 ns/op
-BenchmarkFib20-8           30451             38542 ns/op
-BenchmarkFib20-8           30145             38670 ns/op
-BenchmarkFib20-8           30862             38753 ns/op
-BenchmarkFib20-8           30735             38571 ns/op
+BenchmarkFib20-8           50000             38479 ns/op
+BenchmarkFib20-8           50000             38303 ns/op
+BenchmarkFib20-8           50000             38130 ns/op
+BenchmarkFib20-8           50000             38636 ns/op
+BenchmarkFib20-8           50000             38784 ns/op
+BenchmarkFib20-8           50000             38310 ns/op
+BenchmarkFib20-8           50000             38156 ns/op
+BenchmarkFib20-8           50000             38291 ns/op
+BenchmarkFib20-8           50000             38075 ns/op
+BenchmarkFib20-8           50000             38705 ns/op
 PASS
-ok      _/Users/dfc/devel/high-performance-go-workshop/examples/fib     15.874s
+ok      _/Users/dfc/devel/high-performance-go-workshop/examples/fib     23.125s
 % benchstat old.txt 
 name     time/op
-Fib20-8  38.8µs ± 2%
+Fib20-8  38.4µs ± 1%
 ----
-
-TODO: redo without josh's patch
 
 `benchstat` tells us the mean is 38.8 microseconds with a +/- 2% variation across the samples.
 This is pretty good for battery power. 
@@ -234,24 +234,29 @@ Sometimes your benchmark has a once per run setup cost. `b.ResetTimer()` will ca
 ----
 func BenchmarkExpensive(b *testing.B) {
         boringAndExpensiveSetup()
-        b.ResetTimer() // HL
+        b.ResetTimer() // <1>
         for n := 0; n < b.N; n++ {
                 // function under test
         }
 }
 ----
+<1> Reset the benchmark timer
+
 If you have some expensive setup logic _per loop_ iteration, use `b.StopTimer()` and `b.StartTimer()` to pause the benchmark timer.
 [source,go]
 ----
 func BenchmarkComplicated(b *testing.B) {
         for n := 0; n < b.N; n++ {
-                b.StopTimer() // HL
+                b.StopTimer() // <1>
                 complicatedSetup()
-                b.StartTimer() // HL
+                b.StartTimer() // <2>
                 // function under test
         }
 }
 ----
+<1> Pause benchmark timer
+<2> Resume timer
+
 == Benchmarking allocations
 
 Allocation count and size is strongly correlated with benchmark time.
@@ -348,13 +353,17 @@ Before we go on, lets look at the assembly to confirm what we saw
 [source]
 % go test -gcflags=-S
 
-TODO: use -l to disable inlining, which disables the optimisation
+====
+Use `gcflags="-l -S" to disable inlining, how does that affect the assembly output
+====
 
-=== Optimisation is a good thing
-
+[NOTE]
+.Optimisation is a good thing
+====
 The thing to take away is the same optimisations that _make real code fast_, by removing unnecessary computation, are the same ones that remove benchmarks that have no observable side effects.
 
 This is only going to get more common as the Go compiler improves.
+====
 
 === Fixing the benchmark
 
@@ -372,9 +381,11 @@ Second, because `r` is declared locally inside the scope of `BenchmarkPopcnt` on
 
 Because `Result` is public the compiler cannot prove that another package importing this one will not be able to see the value of `Result` changing over time, hence it cannot optimise away any of the operations leading to its assignment.
 
-_Exercise_: What happens if we assign to `Result` directly? Does this affect the benchmark time? What about if we assign the result of `popcnt` to `_`?
+====
+What happens if we assign to `Result` directly? Does this affect the benchmark time? What about if we assign the result of `popcnt` to `_`?
+====
 
-_Question_: In our earlier `Fib` benchmark we didn't take these precautions, should we have done so?
+WARNING: In our earlier `Fib` benchmark we didn't take these precautions, should we have done so?
 
 == Benchmark mistakes
 
@@ -383,20 +394,18 @@ The `for` loop is crucial to the operation of the benchmark.
 Here are two incorrect benchmarks, can you explain what is wrong with them?
 
 [source]
-func BenchmarkFibWrong(b *testing.B) {
-        Fib(b.N)
-}
+----
+include::../examples/benchfib/wrong_test.go[tags=wrong]
+----
 
 [source]
-func BenchmarkFibWrong2(b *testing.B) {
-        for n := 0; n < b.N; n++ {
-                Fib(n)
-        }
-}
+----
+include::../examples/benchfib/wrong_test.go[tags=wrong2]
+----
 
-TODO: move to go source
-
-_Exercise_: Run these benchmarks, what do you see?
+====
+Run these benchmarks, what do you see?
+====
 
 == Profiling benchmarks
 
