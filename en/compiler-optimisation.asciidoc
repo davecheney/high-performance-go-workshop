@@ -243,12 +243,16 @@ This is for two reasons;
 . When `max` is inlined into `F`, `F` contains no other function calls thus it becomes a potential _leaf function_, assuming its complexity budget has not been exceeded.
 . Because `F` is a simple function--inlining and dead code elimination has eliminated much of its complexity budget--it is eligable for _mid stack_ inlining irrispective of calling `max`.
 
-TODO: show example of breaking a complex function into a simpler one for the fast path.
+[TIP]
+====
+Mid stack inlining can be used to inline the fast path of a function, eliminating the function call overhead in the fast path. 
+https://go-review.googlesource.com/c/go/+/152698[This recent CL which landed in for Go 1.13] shows this technique applied to `sync.RWMutex.Unlock()`.
+====
 
 ==== Further reading
 
-- https://docs.google.com/presentation/d/1Wcblp3jpfeKwA0Y4FOmj63PW52M_qmNqlQkNaLj0P5o/edit#slide=id.p
-- https://github.com/golang/proposal/blob/master/design/19348-midstack-inlining.md
+- https://docs.google.com/presentation/d/1Wcblp3jpfeKwA0Y4FOmj63PW52M_qmNqlQkNaLj0P5o/edit#slide=id.p[Mid-stack inlining in the Go compiler presentation by David Lazar]
+- https://github.com/golang/proposal/blob/master/design/19348-midstack-inlining.md[Proposal: Mid-stack inlining in the Go compiler]
 
 == Dead code elimination
 
@@ -324,14 +328,14 @@ Combined with build tags this can be very useful.
 
 === Further reading
 
-- [Using // +build to switch between debug and release builds][7]
-- [How to use conditional compilation with the go build tool][8]
+- http://dave.cheney.net/2014/09/28/using-build-to-switch-between-debug-and-release[Using // +build to switch between debug and release builds]
+- http://dave.cheney.net/2013/10/12/how-to-use-conditional-compilation-with-the-go-build-tool[How to use conditional compilation with the go build tool]
 
 == Compiler flags Exercises
 
 Compiler flags are provided with:
 
-[source,go,options="nowrap"]
+[source,options="nowrap"]
 go build -gcflags=$FLAGS
 
 Investigate the operation of the following compiler functions:
@@ -347,30 +351,42 @@ NOTE: If you find that subsequent runs of `go build ...` produce no output, dele
 
 - http://go-talks.appspot.com/github.com/rakyll/talks/gcinspect/talk.slide#1[Codegen Inspection by Jaana Burcu Dogan]
 
-[7]: http://dave.cheney.net/2014/09/28/using-build-to-switch-between-debug-and-release
-[8]: http://dave.cheney.net/2013/10/12/how-to-use-conditional-compilation-with-the-go-build-tool
-- `-m` controls printing of optimisation decision like inlining, escape analysis. `-m`-m` prints more details about what the compiler was thinking.
-- `-l`-N` disables all optimisations.
+== Bounds check elimination
 
-.link http://go-talks.appspot.com/github.com/rakyll/talks/gcinspect/talk.slide#1 Further reading: Codegen Inspection by Jaana Burcu Dogan
+Go is a bounds checked language.
+This means array and slice subscript operations are checked to ensure they are within the bounds of the respective types.
 
-=== Escape analysis
+For arrays, this can be done at compile time.
+For slices, this must be done at run time.
 
-WARNING: `errors.New` breaks inlining - at least in 1.13+ 
-https://go-review.googlesource.com/c/go/+/161760
+[source,go,options=nowrap]
+----
+include::../examples/bounds/bounds_test.go[tags=inorder]
+----
 
-=== Inlining
-=== Dead code elimination
+====
+Use `-gcflags=-S` to disassemble `BenchmarkBoundsCheckInOrder`. How many bounds check operations are performed per loop?
+====
 
-Also known as constant folding
+[source,go,options=nowrap]
+----
+include::../examples/bounds/bounds_test.go[tags=outoforder]
+----
 
-=== Bounds check elimination
+====
+Does rearranging the order in which we assign the `A` through `I` affect the assembly. Disassemble `BenchmarkBoundsCheckOutOfOrder` and find out.
+====
 
-TODO
+=== Exercises
 
-prove phase
+- Does rearranging the order of subscript operations affect the size of the function? Does it affect the speed of the function?
+- What happens if `v` is moved inside the `Benchmark` function?
+- What happens if `v` was declared as an array, `var v [9]int`?
 
-https://go-review.googlesource.com/c/go/+/164966
+////
+=== Nil check elimination
+
+https://go-review.googlesource.com/c/go/+/151177
 
 === Range check elimination?
 
@@ -379,7 +395,4 @@ https://go-review.googlesource.com/c/go/+/164966
 === Map elision
 
 === Shift ordering elision
-
-=== Nil check elimination
-
-https://go-review.googlesource.com/c/go/+/151177
+////

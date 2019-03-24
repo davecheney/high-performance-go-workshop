@@ -357,16 +357,10 @@ We won't cover these tools in this workshop, but you can read and watch a presen
 % vim main.go
 - If you were to generate a profile on one machine and inspect it on another, how would you do it?
 
+////
 === What's coming up in Go 1.13?
 
 Benchmarking time getting more accurate in 1.13
 
 https://go-review.googlesource.com/c/go/+/112155
-
-////
-[0]: https://github.com/pkg/profile
-[1]: https://github.com/google/pprof
-[2]: https://github.com/gperftools/gperftools
-[4]: http://blog.golang.org/profiling-go-programs
-[5]: https://software.intel.com/en-us/blogs/2014/05/10/debugging-performance-issues-in-go-programs
 ////
