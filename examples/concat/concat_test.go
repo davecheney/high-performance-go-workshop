@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"strings"
 	"testing"
 	"time"
 )
@@ -90,6 +91,27 @@ func BenchmarkStrconv(b *testing.B) {
 		b = time.Now().AppendFormat(b, "2006-01-02 15:04:05.999999999 -0700 MST")
 		r = string(b)
 		// end::four[]
+	}
+	Result = r
+}
+
+func BenchmarkStringsBuilder(b *testing.B) {
+	request, client := setup(b)
+	defer client.Close()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	var r string
+	for n := 0; n < b.N; n++ {
+		// tag::five[]
+		var b strings.Builder
+		b.WriteString(request.ID)
+		b.WriteString(" ")
+		b.WriteString(client.Addr().String())
+		b.WriteString(" ")
+		b.WriteString(time.Now().String())
+		r = b.String()
+		// end::five[]
 	}
 	Result = r
 }

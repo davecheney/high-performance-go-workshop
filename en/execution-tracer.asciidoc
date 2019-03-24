@@ -1,3 +1,4 @@
+[#execution-tracer]
 = Execution Tracer
 
 The execution tracer was developed by https://github.com/dvyukov[Dmitry Vyukov] for Go 1.5 and remained under documented, and under utilised, for several years.
@@ -9,7 +10,7 @@ Unlike sample based profiling, the execution tracer is integrated into the Go ru
 I think its easiest to explain what the execution tracer does, and why it's important by looking at a piece of code where the pprof, `go tool pprof` performs poorly.
 
 The `examples/mandelbrot` directory contains a simple mandelbrot generator.
-This code is derived from [[https://github.com/campoy/mandelbrot][Francesc Campoy's mandelbrot package]].
+This code is derived from https://github.com/campoy/mandelbrot][Francesc Campoy's mandelbrot package].
 
 [source]
 cd examples/mandelbrot
@@ -17,7 +18,7 @@ go build && ./mandelbrot
 
 If we build it, then run it, it generates something like this
 
-image::images/mandelbrot.png][]
+image::images/mandelbrot.png[]
 
 === How long does it take?
 
@@ -98,14 +99,7 @@ NOTE: Using `pkg/profile` is not mandatory, but it takes care of a lot of the bo
 Now we have a profile, we can use `go tool pprof` to analyse it.
 
 [source]
-% go tool pprof cpu.pprof 
-Type: cpu
-Time: Sep 17, 2017 at 12:22pm (AEST)
-Duration: 1.81s, Total samples = 1.53s (84.33%)
-Entering interactive mode (type "help" for commands,"o" for options)
-(pprof) 
-
-TODO: update pprof
+% go tool pprof -http=:8080 cpu.pprof 
 
 In this run we see that the program ran for 1.81s seconds (profiling adds a small overhead).
 We can also see that pprof only captured data for 1.53 seconds, as pprof is sample based, relying on the operating system's `SIGPROF` timer.
@@ -116,43 +110,48 @@ We can use the `top` pprof function to sort functions recorded by the trace
 
 [source,options=nowrap]
 ----
-(pprof) top                                                
-Showing nodes accounting for 1.53s, 100% of 1.53s total
-Showing top 10 nodes out of 57
-     flat  flat%   sum%        cum   cum%
-       1s 65.36% 65.36%         1s 65.36%  main.paint /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go (inline)
-    0.27s 17.65% 83.01%      1.27s 83.01%  main.fillPixel /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go
-    0.13s  8.50% 91.50%      0.16s 10.46%  runtime.mallocgc /Users/dfc/go/src/runtime/malloc.go
-    0.05s  3.27% 94.77%      0.05s  3.27%  syscall.Syscall /Users/dfc/go/src/syscall/asm_darwin_amd64.s
-    0.02s  1.31% 96.08%      0.02s  1.31%  runtime.memmove /Users/dfc/go/src/runtime/memmove_amd64.s
-    0.02s  1.31% 97.39%      0.02s  1.31%  runtime.mmap /Users/dfc/go/src/runtime/sys_darwin_amd64.s
-    0.01s  0.65% 98.04%      0.07s  4.58%  compress/flate.(*compressor).deflate /Users/dfc/go/src/compress/flate/deflate.go
-    0.01s  0.65% 98.69%      0.01s  0.65%  compress/flate.matchLen /Users/dfc/go/src/compress/flate/deflate.go
-    0.01s  0.65% 99.35%      0.01s  0.65%  image/png.filter /Users/dfc/go/src/image/png/writer.go
-    0.01s  0.65%   100%      0.01s  0.65%  runtime.memclrNoHeapPointers /Users/dfc/go/src/runtime/memclr_amd64.s
+% go tool pprof cpu.pprof 
+Type: cpu
+Time: Mar 24, 2019 at 5:18pm (CET)
+Duration: 2.16s, Total samples = 1.91s (88.51%)
+Entering interactive mode (type "help" for commands, "o" for options)
+(pprof) top
+Showing nodes accounting for 1.90s, 99.48% of 1.91s total
+Showing top 10 nodes out of 35
+      flat  flat%   sum%        cum   cum%
+     0.82s 42.93% 42.93%      1.63s 85.34%  main.fillPixel
+     0.81s 42.41% 85.34%      0.81s 42.41%  main.paint
+     0.11s  5.76% 91.10%      0.12s  6.28%  runtime.mallocgc
+     0.04s  2.09% 93.19%      0.04s  2.09%  runtime.memmove
+     0.04s  2.09% 95.29%      0.04s  2.09%  runtime.nanotime
+     0.03s  1.57% 96.86%      0.03s  1.57%  runtime.pthread_cond_signal
+     0.02s  1.05% 97.91%      0.04s  2.09%  compress/flate.(*compressor).deflate
+     0.01s  0.52% 98.43%      0.01s  0.52%  compress/flate.(*compressor).findMatch
+     0.01s  0.52% 98.95%      0.01s  0.52%  compress/flate.hash4
+     0.01s  0.52% 99.48%      0.01s  0.52%  image/png.filter
 ----
 
-We see that the `main.paint` function was on the CPU the most when pprof captured the stack.
+We see that the `main.fillPixel` function was on the CPU the most when pprof captured the stack.
 
 Finding `main.paint` on the stack isn't a surprise, this is what the program does; it paints pixels. But what is causing `paint` to spend so much time? We can check that with the _cummulative_ flag to `top`.
 
 [source,options=nowrap]
 ----
-(pprof) top --cum                                   Showing nodes accounting for 1270ms, 83.01% of 1530ms total                                        Showing top 10 nodes out of 57                             
-     flat  flat%   sum%        cum   cum%                 
-         0     0%     0%     1530ms   100%  main.main /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go
-         0     0%     0%     1530ms   100%  runtime.main /Users/dfc/go/src/runtime/proc.go                            
-     270ms 17.65% 17.65%     1270ms 83.01%  main.fillPixel /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go                                                                                
-         0     0% 17.65%     1270ms 83.01%  main.seqFillImg /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go                                                                               
-    1000ms 65.36% 83.01%     1000ms 65.36%  main.paint /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go (inline)                                                                           
-         0     0% 83.01%      260ms 16.99%  image/png.(*Encoder).Encode /Users/dfc/go/src/image/png/writer.go         
-         0     0% 83.01%      260ms 16.99%  image/png.Encode /Users/dfc/go/src/image/png/writer.go                    
-         0     0% 83.01%      190ms 12.42%  image/png.(*encoder).writeIDATs /Users/dfc/go/src/image/png/writer.go     
-         0     0% 83.01%      190ms 12.42%  image/png.(*encoder).writeImage /Users/dfc/go/src/image/png/writer.go     
-         0     0% 83.01%      180ms 11.76%  main.(*img).At /Users/dfc/devel/understanding-the-execution-tracer/examples/mandelbrot-pkg-profile/mandelbrot.go 
+(pprof) top --cum
+Showing nodes accounting for 1630ms, 85.34% of 1910ms total
+Showing top 10 nodes out of 35
+      flat  flat%   sum%        cum   cum%
+         0     0%     0%     1840ms 96.34%  main.main
+         0     0%     0%     1840ms 96.34%  runtime.main
+     820ms 42.93% 42.93%     1630ms 85.34%  main.fillPixel
+         0     0% 42.93%     1630ms 85.34%  main.seqFillImg
+     810ms 42.41% 85.34%      810ms 42.41%  main.paint
+         0     0% 85.34%      210ms 10.99%  image/png.(*Encoder).Encode
+         0     0% 85.34%      210ms 10.99%  image/png.Encode
+         0     0% 85.34%      160ms  8.38%  main.(*img).At
+         0     0% 85.34%      160ms  8.38%  runtime.convT2Inoptr
+         0     0% 85.34%      150ms  7.85%  image/png.(*encoder).writeIDATs
 ----
-
-TODO: redo 
 
 This is sort of suggesting that `main.fillPixed` is actually doing most of the work.
 
@@ -160,7 +159,7 @@ This is sort of suggesting that `main.fillPixed` is actually doing most of the w
 ====
 You can also visualise the profile with the `web` command, which looks like this:
 
-image::../examples/mandelbrot-pkg-profile/cpu.svg[].
+image::../examples/mandelbrot-pkg-profile/cpu.svg[{svg-inline}]
 ====
 
 == Tracing vs Profiling
@@ -195,14 +194,12 @@ sys     0m0.020s
 
 Just like pprof, there is a tool in the `go` command to analyse the trace.
 
-[source,go,options=nowrap]
-----
+[source,options=nowrap]
 % go tool trace trace.out
 2017/09/17 12:41:39 Parsing trace...
 2017/09/17 12:41:40 Serializing trace...
 2017/09/17 12:41:40 Splitting trace...
 2017/09/17 12:41:40 Opening browser. Trace viewer s listening on http://127.0.0.1:57842
-----
 
 This tool is a little bit different to `go tool pprof`. The execution tracer is reusing a lot of the profile visualisation infrastructure built into Chrome, so `go tool trace` acts as a server to translate the raw execution trace into data which Chome can display natively.
 
@@ -307,8 +304,6 @@ sys     0m1.284s
 
 So, the runtime was much worse than any previous. Let's look at the trace and see if we can figure out what happened.
 
-=== Using workers (cont.)
-
 Looking at the trace you can see that with only one worker process the producer and consumer tend to alternate because there is only one worker and one consumer. Let's increase the number of workers
 
 [source,options=nowrap]
@@ -368,16 +363,13 @@ Using a buffered channel the trace showed us that:
 
 Using this method we got nearly the same speed using a channel to hand off work per pixel than we did previously scheduling on goroutine per row.
 
-_Exercise_: modify `nWorkersFillImg` to work per row. Time the result and analyse the trace.
-
-=== Break
-
-Let's take a break.
+====
+Modify `nWorkersFillImg` to work per row. Time the result and analyse the trace.
+====
 
 == Mandelbrot microservice
 
-It's 2017, generating Mandelbrots is pointless unless you can offer them on the internet as a web sevice.
-
+It's 2019, generating Mandelbrots is pointless unless you can offer them on the internet as a serverless microservice.
 Thus, I present to you, _Mandelweb_
 
 [source,options=nowrap]
@@ -432,7 +424,7 @@ And with that running, in another window collect the trace
 ----
 % curl -o trace.out http://127.0.0.1:8080/debug/pprof/trace?seconds=5                        
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current                                      
-                                Dload  Upload   Total   Spent    Left  Speed                                        
+                                 Dload  Upload   Total   Spent    Left  Speed                                        
 100 66169    0 66169    0     0  13233      0 --:--:--  0:00:05 --:--:-- 17390
 % go tool trace trace.out
 2017/09/17 16:09:30 Parsing trace...
@@ -461,19 +453,19 @@ And with that running, in another window collect the trace
  2017/09/17 16:09:30 Splitting trace...                    
  2017/09/17 16:09:30 Opening browser. Trace viewer is listening on http://127.0.0.1:60301   
 
-== Extra credit
+=== Extra credit, the Sieve of Eratosthenes
 
-=== Sieve of Eratosthenes
+The https://github.com/golang/go/blob/master/doc/play/sieve.go[concurrent prime sieve] is one of the first Go programs written.
 
-The concurrent [[examples/sieve/main.go][prime sieve]] is one of the first Go programs written.
-
-Ivan Daniluk [[http://divan.github.io/posts/go_concurrency_visualize/][wrote a great post on visualising]] it.
+Ivan Daniluk http://divan.github.io/posts/go_concurrency_visualize/[wrote a great post on visualising] it.
 
 Let's take a look at its operation using the execution tracer.
 
+////
 === User supplied traces
 
 TODO
+////
 
 === More resources
 

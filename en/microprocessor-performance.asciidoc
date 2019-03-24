@@ -164,7 +164,7 @@ Will this be the future of computer performance? Unfortunately not.
 
 Amdahl's law, named after the Gene Amdahl the designer of the IBM/360, is a formula which gives the theoretical speedup in latency of the execution of a task at fixed workload that can be expected of a system whose resources are improved.
 
-image::https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/AmdahlsLaw.svg/400px-AmdahlsLaw.svg.png[]
+image::https://upload.wikimedia.org/wikipedia/commons/e/ea/AmdahlsLaw.svg[]
 
 Amdahl's law tells us that the maximum speedup of a program is limited by the sequential parts of the program.
 If you write a program with 95% of its execution able to be run in parallel, even with thousands of processors the maximum speedup in the programs execution is limited to 20x. 

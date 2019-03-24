@@ -10,6 +10,7 @@ Dave Cheney <dave@cheney.net>
 :sectlinks:
 :sectnums:
 :toc:
+:stem:
 :homepage: https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html
 :shortlink: http://bit.ly/dotgo2019
 :github: https://github.com/davecheney/high-performance-go-workshop

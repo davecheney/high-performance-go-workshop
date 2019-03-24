@@ -40,21 +40,22 @@ These stats are always collected, but normally suppressed, you can enable their 
 
 [source,options=nowrap]
 % env GODEBUG=gctrace=1 godoc -http=:8080
-gc 1 @0.017s 8%: 0.021+3.2+0.10+0.15+0.86 ms clock, 0.043+3.2+0+2.2/0.002/0.009+1.7 ms cpu, 5->6->1 MB, 4 MB goal, 4 P
-gc 2 @0.026s 12%: 0.11+4.9+0.12+1.6+0.54 ms clock, 0.23+4.9+0+3.0/0.50/0+1.0 ms cpu, 4->6->3 MB, 6 MB goal, 4 P
-gc 3 @0.035s 14%: 0.031+3.3+0.76+0.17+0.28 ms clock, 0.093+3.3+0+2.7/0.012/0+0.84 ms cpu, 4->5->3 MB, 3 MB goal, 4 P
-gc 4 @0.042s 17%: 0.067+5.1+0.15+0.29+0.95 ms clock, 0.20+5.1+0+3.0/0/0.070+2.8 ms cpu, 4->5->4 MB, 4 MB goal, 4 P
-gc 5 @0.051s 21%: 0.029+5.6+0.33+0.62+1.5 ms clock, 0.11+5.6+0+3.3/0.006/0.002+6.0 ms cpu, 5->6->4 MB, 5 MB goal, 4 P
-gc 6 @0.061s 23%: 0.080+7.6+0.17+0.22+0.45 ms clock, 0.32+7.6+0+5.4/0.001/0.11+1.8 ms cpu, 6->6->5 MB, 7 MB goal, 4 P
-gc 7 @0.071s 25%: 0.59+5.9+0.017+0.15+0.96 ms clock, 2.3+5.9+0+3.8/0.004/0.042+3.8 ms cpu, 6->8->6 MB, 8 MB goal, 4 P
-
-TODO: update
+gc 1 @0.012s 2%: 0.026+0.39+0.10 ms clock, 0.21+0.88/0.52/0+0.84 ms cpu, 4->4->0 MB, 5 MB goal, 8 P
+gc 2 @0.016s 3%: 0.038+0.41+0.042 ms clock, 0.30+1.2/0.59/0+0.33 ms cpu, 4->4->1 MB, 5 MB goal, 8 P
+gc 3 @0.020s 4%: 0.054+0.56+0.054 ms clock, 0.43+1.0/0.59/0+0.43 ms cpu, 4->4->1 MB, 5 MB goal, 8 P
+gc 4 @0.025s 4%: 0.043+0.52+0.058 ms clock, 0.34+1.3/0.64/0+0.46 ms cpu, 4->4->1 MB, 5 MB goal, 8 P
+gc 5 @0.029s 5%: 0.058+0.64+0.053 ms clock, 0.46+1.3/0.89/0+0.42 ms cpu, 4->4->1 MB, 5 MB goal, 8 P
+gc 6 @0.034s 5%: 0.062+0.42+0.050 ms clock, 0.50+1.2/0.63/0+0.40 ms cpu, 4->4->1 MB, 5 MB goal, 8 P
+gc 7 @0.038s 6%: 0.057+0.47+0.046 ms clock, 0.46+1.2/0.67/0+0.37 ms cpu, 4->4->1 MB, 5 MB goal, 8 P
+gc 8 @0.041s 6%: 0.049+0.42+0.057 ms clock, 0.39+1.1/0.57/0+0.46 ms cpu, 4->4->1 MB, 5 MB goal, 8 P
+gc 9 @0.045s 6%: 0.047+0.38+0.042 ms clock, 0.37+0.94/0.61/0+0.33 ms cpu, 4->4->1 MB, 5 MB goal, 8 P
 
 The trace output gives a general measure of GC activity.
+The output format of `gctrace=1` is described in https://golang.org/pkg/runtime/#hdr-Environment_Variables[the `runtime` package documentation].
 
 DEMO: Show `godoc` with `GODEBUG=gctrace=1` enabled
 
-_Recommendation_: use this env var in production, it has no performance impact.
+TIP: Use this env var in production, it has no performance impact.
 
 Using `GODEBUG=gctrace=1` is good when you _know_ there is a problem, but for general telemetry on your Go application I recommend the `net/http/pprof` interface.
 
@@ -79,15 +80,13 @@ DEMO: `godoc -http=:8080`, show `/debug/pprof`.
 
 The Go runtime provides one environment variable to tune the GC, `GOGC`.
 
-The formula for GOGC is as follows.
+The formula for GOGC is
 
-[source]
-goal = reachable * (1 + GOGC/100)
+stem:[goal = reachabl\e * (1 + (GOGC)/100)]
 
 For example, if we currently have a 256MB heap, and `GOGC=100` (the default), when the heap fills up it will grow to
 
-[source]
-512MB = 256MB * (1 + 100/100)
+stem:[512MB = 256MB * (1 + 100/100)]
 
 - Values of `GOGC` greater than 100 causes the heap to grow faster, reducing the pressure on the GC.
 - Values of `GOGC` less than 100 cause the heap to grow slowly, increasing the pressure on the GC.
@@ -100,15 +99,18 @@ Make sure your APIs allow the caller to reduce the amount of garbage generated.
 
 Consider these two Read methods
 
- func (r *Reader) Read() ([]byte, error)
- func (r *Reader) Read(buf []byte) (int, error)
+[source,go]
+func (r *Reader) Read() ([]byte, error)
+func (r *Reader) Read(buf []byte) (int, error)
 
 The first Read method takes no arguments and returns some data as a `[]byte`.
 The second takes a `[]byte` buffer and returns the amount of bytes read.
 
 The first Read method will _always_ allocate a buffer, putting pressure on the GC. The second fills the buffer it was given.
 
-_Exercise_: Can you name examples in the std lib which follow this pattern?
+====
+Can you name examples in the std lib which follow this pattern?
+====
 
 == ++strings++ and ++[]byte++s
 
@@ -139,7 +141,9 @@ This will avoid the conversion of the byte slice to a string for the map lookup.
 key := string(bytes)
 val, ok := m[key] 
 
-_Exercise_: Let's see if this is still true. Write a benchmark comparing these two methods of using a `[]byte` as a `string` map key.
+====
+Let's see if this is still true. Write a benchmark comparing these two methods of using a `[]byte` as a `string` map key.
+====
 
 == Avoid string concatenation
 
@@ -157,7 +161,12 @@ include::../examples/concat/concat_test.go[tags=three]
 [source,go,options=nowrap]
 include::../examples/concat/concat_test.go[tags=four]
 
+[source,go,options=nowrap]
+include::../examples/concat/concat_test.go[tags=five]
+
 DEMO: `go test -bench=. ./examples/concat`
+
+TODO: strings.Builder
 
 == Preallocate slices if the length is known
 
@@ -174,35 +183,39 @@ If you use the append pattern you could be copying a lot of data and creating a 
 
 If know know the length of the slice beforehand, then pre-allocate the target to avoid copying and to make sure the target is exactly the right size. 
 
-_Before:_
-
 [source,go]
+.Before
+----
 var s []string
 for _, v := range fn() {
         s = append(s, v)
 }
 return s
-
-_After:_
+----
 
 [source,go]
+.After
+----
 vals := fn()
 s := make([]string, len(vals))
 for i, v := range vals {
         s[i] = v           
 }
 return s
+----
 
 == Using sync.Pool
 
 The `sync` package comes with a `sync.Pool` type which is used to reuse common objects.
 
-`sync.Pool` has no fixed size or maximum capacity. You add to it and take from it until a GC happens, then it is emptied unconditionally.
-This is https://groups.google.com/forum/#!searchin/golang-dev/gc-aware/golang-dev/kJ_R6vYVYHU/LjoGriFTYxMJ[by design];
+`sync.Pool` has no fixed size or maximum capacity.
+You add to it and take from it until a GC happens, then it is emptied unconditionally.
+This is https://groups.google.com/forum/#!searchin/golang-dev/gc-aware/golang-dev/kJ_R6vYVYHU/LjoGriFTYxMJ[by design]:
 
 > If before garbage collection is too early and after garbage collection too late, then the right time to drain the pool must be during garbage collection. That is, the semantics of the Pool type must be that it drains at each garbage collection. -- Russ Cox
 
 [source,go,options=nowrap]
+.sync.Pool in action
 ----
 include::../examples/pool/pool.go[tags=pool]
 ----
@@ -214,12 +227,21 @@ include::../examples/pool/pool.go[tags=pool]
 Do not place important items in a `sync.Pool`, they will be discarded.
 ====
 
-TODO: pool changes in Go 1.13. https://go-review.googlesource.com/c/go/+/166961/
+[TIP]
+====
+The design of sync.Pool emptying itself on each GC may change in Go 1.13 which will help improve its utility.
+
+> This CL fixes this by introducing a victim cache mechanism. Instead of
+clearing Pools, the victim cache is dropped and the primary cache is
+moved to the victim cache. As a result, in steady-state, there are
+(roughly) no new allocations, but if Pool usage drops, objects will
+still be collected within two GCs (as opposed to one). -- Austin Clements
+
+https://go-review.googlesource.com/c/go/+/166961/
+====
 
 == Exercises
 
 - Using `godoc` (or another program) observe the results of changing `GOGC` using `GODEBUG=gctrace=1`.
-
 - Benchmark byte's string(byte) map keys
-
 - Benchmark allocs from different concat strategies.
