@@ -17,12 +17,13 @@ This workshop is a collaboration between https://twitter.com/davecheney[David Ch
 
 This presentation is licensed under the https://creativecommons.org/licenses/by-sa/4.0/[Creative Commons Attribution-ShareAlike 4.0 International] licence.
 
-
 == Prerequisites
 
 The are several software downloads you will need today.
 
-Download this repo on {github}
+=== The workshop repository
+
+Download the source to this document and code samples at {github}
 
 === Laptop, power supplies, etc.
 
