@@ -1,6 +1,8 @@
+[#memory-and-gc]
 = Memory and Garbage Collector
 
-Go is a garbage collected language. This is a design principle, it will not change.
+Go is a garbage collected language.
+This is a design principle, it will not change.
 
 As a garbage collected language, the performance of Go programs is often determined by their interaction with the garbage collector.
 
@@ -165,8 +167,6 @@ include::../examples/concat/concat_test.go[tags=four]
 include::../examples/concat/concat_test.go[tags=five]
 
 DEMO: `go test -bench=. ./examples/concat`
-
-TODO: strings.Builder
 
 == Preallocate slices if the length is known
 

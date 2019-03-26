@@ -10,7 +10,7 @@ Unlike sample based profiling, the execution tracer is integrated into the Go ru
 I think its easiest to explain what the execution tracer does, and why it's important by looking at a piece of code where the pprof, `go tool pprof` performs poorly.
 
 The `examples/mandelbrot` directory contains a simple mandelbrot generator.
-This code is derived from https://github.com/campoy/mandelbrot][Francesc Campoy's mandelbrot package].
+This code is derived from https://github.com/campoy/mandelbrot[Francesc Campoy's mandelbrot package].
 
 [source]
 cd examples/mandelbrot

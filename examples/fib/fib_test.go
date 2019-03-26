@@ -9,6 +9,8 @@ func Fib(n int) int {
 		return 0
 	case 1:
 		return 1
+	case 2:
+		return 2
 	default:
 		return Fib(n-1) + Fib(n-2)
 	}
@@ -25,7 +27,7 @@ func BenchmarkFib20(b *testing.B) {
 
 // end::benchmarkfib20[]
 
-func benchmarkFib1(b *testing.B) {
+func BenchmarkFib1(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		Fib(1)
 	}

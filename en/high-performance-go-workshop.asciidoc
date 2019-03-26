@@ -47,9 +47,10 @@ Here's the (approximate) schedule for the day.
 | 12:00	| Lunch (90 minutes)
 | 13:30	| <<compiler-optimisation>>
 | 14:30	| <<execution-tracer>>
-| 15:15	| Break (15 minutes)
-| 15:30	| <<tips-and-tricks>>
-| 16:00	| Exercises
+| 15:30	| Break (15 minutes)
+| 15:45	| <<memory-and-gc>>
+| 16:15 | <<tips-and-tricks>>
+| 16:30	| Exercises
 | 16:45	| <<conclusion>>
 | 17:00	| Close
 |===

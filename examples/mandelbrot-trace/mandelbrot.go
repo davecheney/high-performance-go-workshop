@@ -116,21 +116,25 @@ func onePerRowFillImg(m *img) {
 }
 
 func nWorkersFillImg(m *img, workers int) {
-	c := make(chan struct{ i, j int })
+	c := make(chan int, 1024)
+	var wg sync.WaitGroup
+	wg.Add(workers)
 	for i := 0; i < workers; i++ {
 		go func() {
-			for t := range c {
-				fillPixel(m, t.i, t.j)
+			for i := range c {
+				for j := range m.m[i] {
+					fillPixel(m, i, j)
+				}
 			}
+			wg.Done()
 		}()
 	}
 
-	for i, row := range m.m {
-		for j := range row {
-			c <- struct{ i, j int }{i, j}
-		}
+	for i := range m.m {
+		c <- i
 	}
 	close(c)
+	wg.Wait()
 }
 
 func fillPixel(m *img, x, y int) {
