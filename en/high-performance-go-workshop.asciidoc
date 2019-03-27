@@ -2,6 +2,7 @@
 Dave Cheney <dave@cheney.net>
 {revnumber}, {docdate}
 :doctype: book
+:docinfo: shared
 :icons: font
 :idprefix:
 :sectids:
