@@ -178,10 +178,6 @@ The compiler printed two lines.
 - The first at line 3, the declaration of `Max`, telling us that it can be inlined.
 - The second is reporting that the body of `Max` has been inlined into the caller at line 12.
 
-====
-_Without_ using the `//go:noinline` comment, rewrite `Max` such that it still returns the right answer, but is no longer considered inlineable by the compiler.
-====
-
 === What does inlining look like?
 
 Compile `max.go` and see what the optimised version of `F()` became.
@@ -217,6 +213,42 @@ For the rest of the presentation I'll be using a small shell script to reduce th
 asm() {
         go build -gcflags=-S 2>&1 $@ | grep -v PCDATA | grep -v FUNCDATA | less
 }
+====
+
+
+====
+_Without_ using the `//go:noinline` comment, rewrite `Max` such that it still returns the right answer, but is no longer considered inlineable by the compiler.
+
+Here's one way to do it
+[source,go,options=nowrap]
+----
+include::../examples/inl/max_noinline.go
+----
+
+Let's see what the compiler thinks of it
+[source,bash]
+----
+% go build -gcflags=-m max_noinline.go 
+# command-line-arguments
+./max_noinline.go:16:6: can inline F <1>
+./max_noinline.go:25:6: can inline main
+./max_noinline.go:26:3: inlining call to F
+----
+<1> The `can inline Max` line is now missing
+
+We can double check this with two `-m` flags
+[source,bash]
+----
+% go build -gcflags=-m=2 max_noinline.go 
+# command-line-arguments
+./max_noinline.go:6:6: cannot inline Max: unhandled op SELECT <1>
+./max_noinline.go:16:6: can inline F as: func() { <node DCLCONST>; <node DCLCONST>; if Max(a, b) == b { panic(b) } } <2>
+./max_noinline.go:25:6: can inline main as: func() { F() }
+./max_noinline.go:26:3: inlining call to F func() { <node DCLCONST>; <node DCLCONST>; if Max(a, b) == b { panic(b) } }
+----
+<1> `Max` is no longer inlinable because it contains a `select` statement
+<2> Note this is the code that the compiler sees, this is why `Max is inline twice`
+
 ====
 
 === Discussion
@@ -382,7 +414,7 @@ If we were to compile it we would see something like this
 
 To satisfy the compiler we must supply the assembly for this function, which we can do via a `.s` file in the same package.
 
-[source,asm]
+[source]
 .add.s
 ----
 include::../examples/asm/add.s[]
@@ -412,7 +444,7 @@ inlining, and mid stack inlining apply to them.
 
 [source,go,options=nowrap]
 ----
-include::../examples/counter/counter.go
+include::../examples/counter/counter.go[]
 ----
 This means examples like the one above compile to efficient native code on most platforms.
 [source,asm,options=nowrap]
