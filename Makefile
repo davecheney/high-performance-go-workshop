@@ -15,7 +15,7 @@ GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always)
 GIT_DATE := $(shell git log -1 --format=%cd)
 
 site: $(SITE)/$(TITLE).html $(IMAGES)/image-20180818145606919.png $(IMAGES)/jalopnik.png $(IMAGES)/cpu-performance.png $(IMAGES)/int_graph.png $(IMAGES)/stuttering.png $(IMAGES)/mandelbrot.png $(IMAGES)/cmos-inverter.png $(IMAGES)/power-density.png $(IMAGES)/gate-length.png $(IMAGES)/highrescpudies_fullyc_020-1105.png $(IMAGES)/mandelbrot.png $(IMAGES)/profile001.svg
-	mv $(SITE)/$(TITLE).html $(SITE)/gophercon-signapore-2019.html
+	mv $(SITE)/$(TITLE).html $(SITE)/gopherchina-2019.html
 	rsync -az -e "ssh -o StrictHostKeyChecking=no -o ControlMaster=auto -o 'ControlPath=~/.ssh/cm_socket/%r@%h:%p' -o ControlPersist=yes" $(SITE) dave.cheney.net:/export/sites/cheney.net/dave/htdocs/
 
 pdf: $(OUTPUT)/$(TITLE).pdf

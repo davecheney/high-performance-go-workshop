@@ -211,6 +211,12 @@ The output from `-S` is not the final machine code that goes into your binary.
 The linker does some processing during the final link stage.
 Lines like `FUNCDATA` and `PCDATA` are metadata for the garbage collector which are moved elsewhere when linking.
 If you're reading the output of `-S`, just ignore `FUNCDATA` and `PCDATA` lines; they're not part of the final binary.
+
+For the rest of the presentation I'll be using a small shell script to reduce the clutter in the assembly output.
+[source,bash]
+asm() {
+        go build -gcflags=-S 2>&1 $@ | grep -v PCDATA | grep -v FUNCDATA | less
+}
 ====
 
 === Discussion
@@ -231,7 +237,7 @@ Adjusting the _inlining level_ is performed with the `-gcflags=-l` flag. Somewha
 - nothing, regular inlining.
 - `-gcflags='-l -l'` inlining level 2, more aggressive, might be faster, may make bigger binaries.
 - `-gcflags='-l -l -l'` inlining level 3, more aggressive again, binaries definitely bigger, maybe faster again, but might also be buggy.
-- `-gcflags=-l=4` (four `-l`s) in Go 1.11 will enable the experimental https://github.com/golang/go/issues/19348#issuecomment-393654429[_mid stack_ inlining optimisation].
+- `-gcflags=-l=4` (four `-l`s) in Go 1.11 will enable the experimental https://github.com/golang/go/issues/19348#issuecomment-393654429[_mid stack_ inlining optimisation]. I believe as of Go 1.12 it has no effect.
 
 === Mid Stack inlining
 
@@ -248,6 +254,85 @@ This is for two reasons;
 Mid stack inlining can be used to inline the fast path of a function, eliminating the function call overhead in the fast path. 
 https://go-review.googlesource.com/c/go/+/152698[This recent CL which landed in for Go 1.13] shows this technique applied to `sync.RWMutex.Unlock()`.
 ====
+
+== Compiler intrinsics
+
+Go allows you to write functions in assembly if required.
+The technique involves a forwarding declared function--a function without a body--and a corresponding assembly function.
+
+[source,go,options=nowrap]
+.decl.go
+----
+include::../examples/asm/decl.go[]
+----
+Here we're declaring an `Add` function which takes two `int64`'s and returns a third.
+Note the `Add` function has no body.
+If we were to compile it we would see something like this
+[source,bash,options=nowrap]
+% go build
+# high-performance-go-workshop/examples/asm [high-performance-go-workshop/examples/asm.test]
+./decl.go:4:6: missing function body
+
+To satisfy the compiler we must supply the assembly for this function, which we can do via a `.s` file in the same package.
+
+[source,asm]
+.add.s
+----
+include::../examples/asm/add.s[]
+----
+
+Now we can build, test, and use our `asm.Add` function just like normal Go code.
+
+But there's a problem, assembly functions *cannot be inlined*.
+This has long been a complaint by Go developers who need to use assembly either for performance, or for operations which are not exposed in the language; vector instructions, atomic primatives and so on, which when written as assembly functions pay a high overhead cost because they cannot be inlined.
+
+There have been various proposals for an inline assembly syntax for Go, similar to GCC's `asm(...)` directive, but they have not been accepted by the Go developers.
+Instead, Go has added _intrinsic functions_.
+
+An intrinsic function is regular Go code written in regular Go, however the compiler contains specific drop in replacements for the functions.
+
+The two packages that make use of this this are
+
+- `math/bits`
+- `sync/atomic`
+
+These replacements are implemented in the compiler backend; if your architecture supports a faster way of doing an operation it will be transparently replaced with the comparable instruction during compilation.
+
+As well as generating more efficient code, because intrinsic functions are just normal Go code, the rules of 
+inlining, and mid stack inlining apply to them.
+
+=== Atomic counter example
+
+[source,go,options=nowrap]
+----
+include::../examples/counter/counter.go
+----
+This means examples like the one above compile to efficient native code on most platforms.
+[source,asm,options=nowrap]
+----
+"".f STEXT nosplit size=36 args=0x8 locals=0x0
+        0x0000 00000 (/tmp/counter.go:21)       TEXT    "".f(SB), NOSPLIT|ABIInternal, $0-8
+        0x0000 00000 (<unknown line number>)    NOP
+        0x0000 00000 (/tmp/counter.go:22)       MOVL    $1, AX
+        0x0005 00005 (/tmp/counter.go:13)       LEAQ    "".c(SB), CX
+        0x000c 00012 (/tmp/counter.go:13)       LOCK
+        0x000d 00013 (/tmp/counter.go:13)       XADDQ   AX, (CX) <1>
+        0x0011 00017 (/tmp/counter.go:23)       XCHGL   AX, AX
+        0x0012 00018 (/tmp/counter.go:10)       MOVQ    "".c(SB), AX <2>
+        0x0019 00025 (<unknown line number>)    NOP
+        0x0019 00025 (/tmp/counter.go:16)       XORL    AX, AX
+        0x001b 00027 (/tmp/counter.go:16)       XCHGQ   AX, (CX) <3>
+        0x001e 00030 (/tmp/counter.go:24)       MOVQ    AX, "".~r0+8(SP)
+        0x0023 00035 (/tmp/counter.go:24)       RET
+        0x0000 b8 01 00 00 00 48 8d 0d 00 00 00 00 f0 48 0f c1  .....H.......H..
+        0x0010 01 90 48 8b 05 00 00 00 00 31 c0 48 87 01 48 89  ..H......1.H..H.
+        0x0020 44 24 08 c3                                      D$..
+        rel 8+4 t=15 "".c+0
+        rel 21+4 t=15 "".c+0
+----
+<1> `c.inc()`
+<2> `c.get()`
+<3> `c.reset()`
 
 ==== Further reading
 
@@ -331,26 +416,34 @@ Combined with build tags this can be very useful.
 - http://dave.cheney.net/2014/09/28/using-build-to-switch-between-debug-and-release[Using // +build to switch between debug and release builds]
 - http://dave.cheney.net/2013/10/12/how-to-use-conditional-compilation-with-the-go-build-tool[How to use conditional compilation with the go build tool]
 
-== Compiler flags Exercises
+ 
+== Prove pass
 
-Compiler flags are provided with:
+A few releases ago the SSA backend gained a, so called, prove pass.
+Prove, the verb form of Proof, establishes the relationship between variables.
 
-[source,options="nowrap"]
-go build -gcflags=$FLAGS
+Let's look at an example to explain what prove is doing.
+[source,go,options=nowrap]
+----
+include::../examples/prove/foo.go[]
+----
+<1> At this point the compiler knows that x is greater than 5
+<2> Therefore x is _also_ greater than 3, this the branch is always taken.
 
-Investigate the operation of the following compiler functions:
+=== Prove it (ha!)
 
-- `-S` prints the (Go flavoured) assembly of the _package_ being compiled.
-- `-l` controls the behaviour of the inliner; `-l` disables inlining, `-l -l` increases it (more `-l` 's increases the compiler's appetite for inlining code). Experiment with the difference in compile time, program size, and run time.
-- `-m` controls printing of optimisation decision like inlining, escape analysis. `-m`-m` prints more details about what the compiler was thinking.
-- `-l -N` disables all optimisations.
+Just as with inining and escape analysis we can ask the compiler to show us the working of the prove pass.
+We do this with the `-d` flag passed to `go tool compile` via `-gcflags`
 
-NOTE: If you find that subsequent runs of `go build ...` produce no output, delete the `./max` binary in your working directory.
+[source,bash]
+% go build -gcflags=-d=ssa/prove/debug=on foo.go 
+# command-line-arguments
+./foo.go:5:10: Proved Greater64
 
-=== Further reading
+Line 5 is `if x > 3`.
+The compiler is saying that is has proven that the branch will always be true.
 
-- http://go-talks.appspot.com/github.com/rakyll/talks/gcinspect/talk.slide#1[Codegen Inspection by Jaana Burcu Dogan]
-
+////
 == Bounds check elimination
 
 Go is a bounds checked language.
@@ -382,6 +475,30 @@ Does rearranging the order in which we assign the `A` through `I` affect the ass
 - Does rearranging the order of subscript operations affect the size of the function? Does it affect the speed of the function?
 - What happens if `v` is moved inside the `Benchmark` function?
 - What happens if `v` was declared as an array, `var v [9]int`?
+////
+
+== Compiler flags Exercises
+
+Compiler flags are provided with:
+
+[source,options="nowrap"]
+go build -gcflags=$FLAGS
+
+Investigate the operation of the following compiler functions:
+
+- `-S` prints the (Go flavoured) assembly of the _package_ being compiled.
+- `-l` controls the behaviour of the inliner; `-l` disables inlining, `-l -l` increases it (more `-l` 's increases the compiler's appetite for inlining code). Experiment with the difference in compile time, program size, and run time.
+- `-m` controls printing of optimisation decision like inlining, escape analysis. `-m`-m` prints more details about what the compiler was thinking.
+- `-l -N` disables all optimisations.
+- `-d=ssa/prove/debug=on`, this also takes values of 2 and above, see what prints
+- The `-d` flag takes other values, you can find out what they are with the command `go tool compile -d help`. Experiment and see what you can discovrer.
+
+NOTE: If you find that subsequent runs of `go build ...` produce no output, delete the output binary in your working directory.
+
+=== Further reading
+
+- http://go-talks.appspot.com/github.com/rakyll/talks/gcinspect/talk.slide#1[Codegen Inspection by Jaana Burcu Dogan]
+
 
 ////
 === Nil check elimination

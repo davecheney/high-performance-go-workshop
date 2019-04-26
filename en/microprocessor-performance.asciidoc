@@ -213,7 +213,7 @@ NOTE: Cliff Click has a https://www.youtube.com/watch?v=OFgxAFdxYAQ[wonderful pr
 
 > Modern processors are a like nitro fuelled funny cars, they excel at the quarter mile. Unfortunately modern programming languages are like Monte Carlo, they are full of twists and turns. -- David Ungar
 
-This a quote from David Ungar, an influential computer scientist and the developer of the SELF programming language that was referenced in a very old presentation I found online.
+This a quote from David Ungar, an influential computer scientist and the developer of the SELF programming language that was referenced in a very old presentation http://www.ai.mit.edu/projects/dynlangs/wizards-panels.html[I found online].
 
 Thus, modern CPUs are optimised for bulk transfers and bulk operations.
 At every level, the setup cost of an operation encourages you to work in bulk. Some examples include

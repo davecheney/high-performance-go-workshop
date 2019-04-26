@@ -12,8 +12,8 @@ Dave Cheney <dave@cheney.net>
 :sectnums:
 :toc:
 :stem:
-:homepage: https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html
-:shortlink: http://bit.ly/dotgo2019
+:homepage: https://dave.cheney.net/high-performance-go-workshop/gopherchina-2019.html
+:shortlink: http://bit.ly/gopherchina2019
 :github: https://github.com/davecheney/high-performance-go-workshop
 :source-highlighter: pygments
 
@@ -29,7 +29,8 @@ Through the day we'll work from the small -- learning how to write benchmarks, t
 ====
 You can find the latest version of this presentation at
 
-{shortlink}
+image::http://api.qrserver.com/v1/create-qr-code/?color=000000&amp;bgcolor=FFFFFF&amp;data=https%3A%2F%2Fdave.cheney.net%2Fhigh-performance-go-workshop%2Fgopherchina-2019.html&amp;qzone=1&amp;margin=0&amp;size=400x400&amp;ecc=L[]
+
 ====
 
 === Schedule

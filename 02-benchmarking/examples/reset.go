@@ -1,5 +1,7 @@
 package q
 
+import "testing"
+
 // START1 OMIT
 func BenchmarkExpensive(b *testing.B) {
 	boringAndExpensiveSetup()
