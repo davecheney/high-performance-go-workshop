@@ -447,7 +447,7 @@ inlining, and mid stack inlining apply to them.
 include::../examples/counter/counter.go[]
 ----
 This means examples like the one above compile to efficient native code on most platforms.
-[source,asm,options=nowrap]
+[source,options=nowrap]
 ----
 "".f STEXT nosplit size=36 args=0x8 locals=0x0
         0x0000 00000 (/tmp/counter.go:21)       TEXT    "".f(SB), NOSPLIT|ABIInternal, $0-8
