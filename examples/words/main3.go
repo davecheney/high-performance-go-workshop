@@ -9,31 +9,31 @@ import (
 	"log"
 	"os"
 	"unicode"
-
-	"github.com/pkg/profile"
 )
 
-func readbyte(r io.Reader) (rune, error) {
-	var buf [1]byte
-	_, err := r.Read(buf[:])
-	return rune(buf[0]), err
+type bytereader struct {
+	buf [1]byte
+	r   io.Reader
 }
 
-// tag::main[]
-func main() {
-	defer profile.Start(profile.MemProfile, profile.MemProfileRate(1)).Stop()
-	// defer profile.Start(profile.MemProfile).Stop()
+func (b *bytereader) next() (rune, error) {
+	_, err := b.r.Read(b.buf[:])
+	return rune(b.buf[0]), err
+}
 
+func main() {
 	f, err := os.Open(os.Args[1])
 	if err != nil {
 		log.Fatalf("could not open file %q: %v", os.Args[1], err)
 	}
 
-	b := bufio.NewReader(f)
+	br := bytereader{
+		r: bufio.NewReader(f),
+	}
 	words := 0
 	inword := false
 	for {
-		r, err := readbyte(b)
+		r, err := br.next()
 		if err == io.EOF {
 			break
 		}
@@ -48,5 +48,3 @@ func main() {
 	}
 	fmt.Printf("%q: %d words\n", os.Args[1], words)
 }
-
-// end::main[]

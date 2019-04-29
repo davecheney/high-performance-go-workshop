@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	defer profile.Start(profile.TraceProfile, profile.ProfilePath(".")).Stop()
+	defer profile.Start(profile.TraceProfile).Stop()
 
 	var (
 		height  = flag.Int("h", 1024, "height of the output image in pixels")
@@ -73,6 +73,7 @@ func (m *img) At(x, y int) color.Color { return m.m[x][y] }
 func (m *img) ColorModel() color.Model { return color.RGBAModel }
 func (m *img) Bounds() image.Rectangle { return image.Rect(0, 0, m.h, m.w) }
 
+// SEQSTART OMIT
 func seqFillImg(m *img) {
 	for i, row := range m.m {
 		for j := range row {
@@ -80,6 +81,8 @@ func seqFillImg(m *img) {
 		}
 	}
 }
+
+// SEQEND OMIT
 
 func oneToOneFillImg(m *img) {
 	var wg sync.WaitGroup
@@ -110,24 +113,24 @@ func onePerRowFillImg(m *img) {
 }
 
 func nWorkersFillImg(m *img, workers int) {
+	c := make(chan struct{ i, j int }, 1024*1024)
 	var wg sync.WaitGroup
 	wg.Add(workers)
-	rows := make(chan int, 16)
 	for i := 0; i < workers; i++ {
 		go func() {
-			for row := range rows {
-				for j := range m.m[row] {
-					fillPixel(m, row, j)
-				}
+			for t := range c {
+				fillPixel(m, t.i, t.j)
 			}
 			wg.Done()
 		}()
 	}
 
-	for row := range m.m {
-		rows <- row
+	for i, row := range m.m {
+		for j := range row {
+			c <- struct{ i, j int }{i, j}
+		}
 	}
-	close(rows)
+	close(c)
 	wg.Wait()
 }
 
