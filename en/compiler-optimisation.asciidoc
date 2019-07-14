@@ -68,6 +68,18 @@ Because the `numbers` slice is only referenced inside `Sum`, the compiler will a
 
 To print the compilers escape analysis decisions, use the `-m` flag.
 
+[NOTE]
+====
+The escape analysis pass has been rewritten for Go 1.13.
+This has resolved a number of long standing limitations, not to mention found some questionable edge cases in the previous implementation.
+
+The direct result in Go 1.13 is escape analysis functions similar to 1.12, however its debug output, as well see shortly, has changed somewhat.
+
+https://github.com/golang/go/issues/23109[Read the issue for more information]
+====
+
+#TODO: update for 1.13#
+
 [source,options=nowrap]
 % go build -gcflags=-m examples/esc/sum.go
 # command-line-arguments
@@ -439,6 +451,15 @@ These replacements are implemented in the compiler backend; if your architecture
 
 As well as generating more efficient code, because intrinsic functions are just normal Go code, the rules of 
 inlining, and mid stack inlining apply to them.
+
+=== Popcnt example
+
+TODO: update
+
+[source,go,options=nowrap]
+----
+include::../examples/popcnt-intrinsic/popcnt_test.go[tags=benchmark]
+----
 
 === Atomic counter example
 

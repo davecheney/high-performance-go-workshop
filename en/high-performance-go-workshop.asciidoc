@@ -12,8 +12,7 @@ Dave Cheney <dave@cheney.net>
 :sectnums:
 :toc:
 :stem:
-:homepage: https://dave.cheney.net/high-performance-go-workshop/gopherchina-2019.html
-:shortlink: http://bit.ly/gopherchina2019
+:homepage: https://dave.cheney.net/high-performance-go-workshop/sydney-2019.html
 :github: https://github.com/davecheney/high-performance-go-workshop
 :source-highlighter: pygments
 
@@ -29,8 +28,7 @@ Through the day we'll work from the small -- learning how to write benchmarks, t
 ====
 You can find the latest version of this presentation at
 
-image::http://api.qrserver.com/v1/create-qr-code/?color=000000&amp;bgcolor=FFFFFF&amp;data=https%3A%2F%2Fdave.cheney.net%2Fhigh-performance-go-workshop%2Fgopherchina-2019.html&amp;qzone=1&amp;margin=0&amp;size=400x400&amp;ecc=L[]
-
+{homepage}
 ====
 
 === Schedule
@@ -82,6 +80,30 @@ include::tips-and-tricks.asciidoc[]
 :numbered!:
 [#conclusion]
 == Final Questions and Conclusion
+
+TODO: cleanup
+
+Don't do it
+Do it, but don't do it again
+Do it less
+Do it later
+Do it when they're not looking
+Do it concurrently
+Do it cheaper
+
+http://www.brendangregg.com/methodology.html
+
+https://twitter.com/CompSciFact/status/1136738317083561984
+
+## Is it better to write clear code, or high Performance code?
+
+I’ve given this workshop in many countries and without exception the first question I get is?
+
+> Is it better to write clear code, or high Performance code. 
+
+My retort is; is the better to marry for love, or money?
+
+I need to dissuade you of the necessity for writing the highest performance code, certainly if that comes at a cost to clarity, readability, or maintainablity. 
 
 > Readable means reliable -- Rob Pike
 

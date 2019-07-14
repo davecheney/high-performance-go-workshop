@@ -33,6 +33,9 @@ The design of the Go GC has changed over the years
 - Go 1.7, small GC improvements, mainly refactoring.
 - Go 1.8, further work to reduce STW times, now down to the 100 microsecond range.
 - Go 1.10+, https://github.com/golang/proposal/blob/master/design/24543-non-cooperative-preemption.md[move away from pure cooprerative goroutine scheduling] to lower the latency when triggering a full GC cycle.
+- Go 1.13 Scavenger rewritten
+
+TODO: describe scavenger
 
 == Garbage collector monitoring
 
@@ -167,6 +170,21 @@ include::../examples/concat/concat_test.go[tags=four]
 include::../examples/concat/concat_test.go[tags=five]
 
 DEMO: `go test -bench=. ./examples/concat`
+
+=== `[]byte` to `string` conversions
+
+TIP: New in Go 1.13
+
+Just like `[]byte` to `string` conversions are necessary for map keys, comparing two `[]byte` slices for equality either requires a conversion -- potentially a copy -- to a `string`, or the use of the `bytes.Equal` function.
+
+The good news is in 1.13 the compiler has improved to the point that `[]byte` to `string` conversions for the purpose of equality testing avoids the allocation.
+
+[source,go,options=nowrap]
+include::../examples/byteseq/bytes_test.go[tags=bench]
+
+However, just like the map example above, the copy is only elided in simple cases.
+
+Further reading: https://go-review.googlesource.com/c/go/+/173323
 
 == Preallocate slices if the length is known
 

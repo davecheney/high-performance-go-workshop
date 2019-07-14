@@ -3,9 +3,9 @@
 
 This is a workshop about writing high performance code. In other workshops I talk about decoupled design and maintainability, but we’re here today to talk about performance.
 
-I want to start today with a short lecture on how I think about the history of the evolution of computers and why I think writing high performance software is important .
+I want to start today with a short lecture on how I think about the history of the evolution of computers and why I think writing high performance software is important.
 
-The reality is that software runs on hardware, so to talk about writing high performance code, first  we need to talk about the hardware that runs our code.
+The reality is that software runs on hardware, so to talk about writing high performance code, first we need to talk about the hardware that runs our code.
 
 == Mechanical Sympathy 
 
@@ -13,8 +13,8 @@ image::images/image-20180818145606919.png[]
 
 There is a term in popular use at the moment, you’ll hear people like Martin Thompson or Bill Kennedy talk about “mechanical sympathy”.
 
-The name "Mechanical Sympathy" comes from the great racing car driver Jackie Stewart, who was a 3 times world Formula 1 champion. He believed that the best drivers had enough understanding of how a machine worked so they could work in harmony with it. 
-
+The name "Mechanical Sympathy" comes from the three time Formula 1 champion, Jackie Stewart.
+Stewart believed that the best drivers had to understand the mechanics of their vehicle so they could work in harmony with it. 
 To be a great race car driver, you don’t need to be a great mechanic, but you need to have more than a cursory understanding of how a motor car works.
 
 I believe the same is true for us as software engineers.
@@ -42,23 +42,24 @@ If computers are still getting faster then maybe we don’t need to care about t
 === Let's look at the data
 
 This is the classic data you’ll find in textbooks like _Computer Architecture, A Quantitative Approach_ by John L. Hennessy and David A. Patterson.
-This graph was taken from the 5th edition
+
 
 image::https://community.cadence.com/cfs-file/__key/communityserver-blogs-components-weblogfiles/00-00-00-01-06/2313.processorperf.jpg[]
 
-In the 5th edition, Hennessey and Patterson argue that there are three eras of computing performance
+This graph was taken from the 5th edition. Hennessey and Patterson argue that there are five distinct eras of computing performance
 
 - The first was the 1970’s and early 80’s which was the formative years. Microprocessors as we know them today didn’t really exist, computers were built from discrete transistors or small scale integrated circuits. Cost, size, and the limitations in the understanding of material science were the limiting factor.
 - From the mid 80s to 2004 the trend line is clear. Computer integer performance improved on average by 52% each year. Computer power doubled every two years, hence people conflated Moore’s law — the doubling of the number of transistors on a die, with computer performance.
 - Then we come to the third era of computer performance. Things slow down. The aggregate rate of change is 22% per year. 
+- The fourth, and fifth continue that trend, dropping to 9.3% and 2.5% per year respectively.
 
-That previous graph only went up to 2012, but fortunately in 2012 http://preshing.com/20120208/a-look-back-at-single-threaded-cpu-performance/[Jeff Preshing] wrote a https://github.com/preshing/analyze-spec-benchmarks[tool to scrape the Spec website and build your own graph].
+Different versions of the Hennessey and Patterson data that you find online stops between 2012 and 2015. Fortunately in 2012 http://preshing.com/20120208/a-look-back-at-single-threaded-cpu-performance/[Jeff Preshing] wrote a https://github.com/preshing/analyze-spec-benchmarks[tool to scrape the Spec website and build your own graph].
 
 image::images/int_graph.png[]
 
 So this is the same graph using Spec data from 1995 til 2017.
 
-To me, rather than the step change we saw in the 2012 data, I’d say that _single core_ performance is approaching a limit.
+This graph is over a shorter timespan, but confirms Hennessey and Patterson's results.
 The numbers are slightly better for floating point, but for us in the room doing line of business applications, this is probably not that relevant.
 
 === Yes, computer are still getting faster, slowly
@@ -69,7 +70,8 @@ He said "All exponentials come to an end". -- https://www.youtube.com/watch?v=Az
 This is Hennessy's quote from Google Next 18 and his Turing Award lecture.
 His contention is yes, CPU performance is still improving.
 However, single threaded integer performance is still improving around 2-3% per year.
-At this rate its going to take 20 years of compounding growth to double integer performance. Compare that to the go-go days of the 90's where performance was doubling every two years.
+At this rate its going to take _20 years_ of compounding growth to double integer performance.
+Compare that to the go-go days of the 90's where performance was doubling every two years.
 
 Why is this happening?
 
@@ -158,18 +160,18 @@ We'll see this shortly when we talk about benchmarking.
 
 == Amdahl's law
 
-CPUs are not getting faster, but they are getting wider with hyper threading and multiple cores.
+CPUs are not getting faster, but they are getting larger with hyper threading and multiple cores.
 Dual core on mobile parts, quad core on desktop parts, dozens of cores on server parts.
 Will this be the future of computer performance? Unfortunately not.
 
-Amdahl's law, named after the Gene Amdahl the designer of the IBM/360, is a formula which gives the theoretical speedup in latency of the execution of a task at fixed workload that can be expected of a system whose resources are improved.
+Amdahl's law, named after the Gene Amdahl, the cheif architect of the IBM/360 series, is a formula which gives the theoretical speedup in latency of the execution of a task at fixed workload that can be expected of a system whose resources are improved.
 
 image::https://upload.wikimedia.org/wikipedia/commons/e/ea/AmdahlsLaw.svg[]
 
 Amdahl's law tells us that the maximum speedup of a program is limited by the sequential parts of the program.
 If you write a program with 95% of its execution able to be run in parallel, even with thousands of processors the maximum speedup in the programs execution is limited to 20x. 
 
-Think about the programs that you work on every day, how much of their execution is parralisable?
+Think about the programs that you work on every day, how much of their execution is parallelisable?
 
 == Dynamic Optimisations
 
@@ -240,6 +242,8 @@ But, in terms of processor cycles lost waiting for memory, physical memory is st
 
 So, most modern processors are limited by memory latency not capacity.
 
+Further reading: https://people.eecs.berkeley.edu/~rcs/research/interactive_latency.html[An interactive graphic of latency figures over time].
+
 == Cache rules everything around me
 
 image::https://www.extremetech.com/wp-content/uploads/2014/08/latency.png[]
@@ -249,7 +253,7 @@ For decades the solution to the processor/memory cap was to add a cache-- a piec
 But;
 
 - L1 has been stuck at 32kb per core for decades
-- L2 has slowly crept up to 512kb on the largest intel parts
+- L2 has slowly crept up to 512kb on the largest Intel parts
 - L3 is now measured in 4-32mb range, but its access time is variable
 
 image::https://i3.wp.com/computing.llnl.gov/tutorials/linux_clusters/images/E5v4blockdiagram.png[]
@@ -272,7 +276,7 @@ Moore's Law is still in effect, but for all of us in this room, the free lunch i
 
 > The numbers I would cite would be by 2010: 30GHz, 10billion transistors, and 1 tera-instruction per second. -- https://www.cnet.com/news/intel-cto-chip-heat-becoming-critical-issue/[Pat Gelsinger, Intel CTO, April 2002]
 
-It's clear that without a breakthrough in material science the likelihood of a return to the days of 52% year on year growth in CPU performance is vanishingly small.
+It's clear that without a breakthrough in material science the likelihood of a return to the days of 52% year on year growth in _general purpose_ CPU performance is vanishingly small.footnote:[Some semiconductor applications now clock in the 10's of gigaherts, mainly microwave applications].
 The common consensus is that the fault lies not with the material science itself, but how the transistors are being used.
 The logical model of sequential instruction flow as expressed in silicon has lead to this expensive endgame. 
 

@@ -108,6 +108,14 @@ This is a case where readability and maintenance is sacrificed for a performance
 
 Always revisit these decisions.
 
+NEW IN 1.13
+
+TODO: _most_ defers are allocated on the stack
+
+https://go-review.googlesource.com/c/go/+/171758
+
+Need an example
+
 == Avoid Finalisers
 
 Finalisation is a technique to attach behaviour to an object which is just about to be garbage collected.
@@ -119,6 +127,24 @@ For a finaliser to run, the object must not be reachable by _anything_. If you a
 Finalisers run as part of the gc cycle, which means it is unpredictable when they will run and puts them at odds with the goal of reducing gc operation.
 
 A finaliser may not run for a long time if you have a large heap and have tuned your appliation to create minimal garbage.
+
+== Make the fast path inlinable
+
+# TODO: find example from Carlo#
+
+https://go-review.googlesource.com/c/go/+/148959
+
+Inl, split function if over budget or not eligible 
+
+== Faster timers
+
+# TODO: summarise #
+
+Not yet landed.
+
+https://twitter.com/odeke_et/status/1147359570416689152
+
+https://go-review.googlesource.com/c/go/+/171883/
 
 == Minimise cgo
 

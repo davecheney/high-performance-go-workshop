@@ -7,6 +7,8 @@ The goal for this workshop is to give you the tools you need to diagnose perform
 
 Through the day we'll work from the small -- learning how to write benchmarks, then profiling a small piece of code. Then step out and talk about the execution tracer, the garbage collector  and tracing running applications. The remainder of the day will be a chance for you to ask questions, experiment with your own code.
 
+WARNING: This workshop is not offered by VMware and the opinions expressed within do no necessarily reflect the opinions of VMware. Capeesh?
+
 == Instructors
 
 - Dave Cheney mailto:dave@cheney.net[]
@@ -25,13 +27,25 @@ The are several software downloads you will need today.
 
 Download the source to this document and code samples at {github}
 
-=== Laptop, power supplies, etc.
+=== Go 1.13
 
-The workshop material targets Go 1.12.
+The workshop material targets Go 1.13.
+This is currently available in beta.
 
-https://golang.org/dl/[Download Go 1.12]
+https://golang.org/dl/#go1.13beta1[Download Go 1.13 beta 1]
 
-NOTE: If you've already upgraded to Go 1.13 that's ok. There are always some small changes to optimisation choices between minor Go releases and I'll try to point those out as we go along.
+NOTE: If you're using Go 1.12 (or maybe 1.11) that's ok.
+There are always some small changes to optimisation choices between minor Go releases and I'll try to point those out as we go along.
+I'll also highlight the major changes coming in Go 1.13.
+
+[TIP]
+====
+Go 1.13 won't be released til August.
+If you'd like to read more about the upcoming changes here are a few sources for further reading
+
+- https://docs.google.com/presentation/d/e/2PACX-1vRo5urog_B76BcnQbIo7I391MZUKFj7l3gku6hypJ-WK1KCFw40A7BiM6NOVsqD17sA9jS7GyzCfnN4/pub?slide=id.g550f852d27_228_0[What's coming up in Go 1.13] by Daniel Martí
+- https://tip.golang.org/doc/go1.13[Go 1.13 draft release notes] (in progress)
+====
 
 === Graphviz
 
