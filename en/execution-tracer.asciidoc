@@ -472,7 +472,7 @@ TODO
 - Rhys Hiltner, https://www.youtube.com/watch?v=mmqDlbWk_XA[Go's execution tracer] (dotGo 2016)
 - Rhys Hiltner, https://www.youtube.com/watch?v=V74JnrGTwKA[An Introduction to "go tool trace"] (GopherCon 2017)
 - Dave Cheney, https://www.youtube.com/watch?v=2h_NFBFrciI[Seven ways to profile Go programs] (GolangUK 2016)
-- Dave Cheney, https://dave.cheney.net/training#high-performance-go[High performance Go workshop]]
+- Dave Cheney, https://dave.cheney.net/training#high-performance-go[High performance Go workshop]
 - Ivan Daniluk, https://www.youtube.com/watch?v=KyuFeiG3Y60[Visualizing Concurrency in Go] (GopherCon 2016)
 - Kavya Joshi, https://www.youtube.com/watch?v=KBZlN0izeiY[Understanding Channels] (GopherCon 2017)
 - Francesc Campoy, https://www.youtube.com/watch?v=ySy3sR1LFCQ[Using the Go execution tracer]

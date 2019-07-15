@@ -8,12 +8,15 @@ For example;
 - Escape analysis
 - Inlining
 - Dead code elimination
+- Bounds check elimination
+- Nil check elimination
 
-are all handled in the front end of the compiler, while the code is still in its AST form; then the code is passed to the SSA compiler for further optimisation. 
+are all handled in the front end of the compiler, while the code is still in its AST form; then the code is passed to the SSA compiler for further optimisation.
 
 == History of the Go compiler
 
-The Go compiler started as a fork of the Plan9 compiler tool chain circa 2007. The compiler at that time bore a strong resemblance to Aho and Ullman's https://www.goodreads.com/book/show/112269.Principles_of_Compiler_Design[_Dragon Book_].
+The Go compiler started as a fork of the Plan9 compiler tool chain circa 2007.
+The compiler at that time bore a strong resemblance to Aho and Ullman's https://www.goodreads.com/book/show/112269.Principles_of_Compiler_Design[_Dragon Book_].
 
 In 2015 the then Go 1.5 compiler was mechanically translated from https://golang.org/doc/go1.5#c[C into Go].
 
@@ -28,9 +31,10 @@ To illustrate what escape analysis does recall that the https://golang.org/ref/s
 It only mentions that the language is garbage collected in the introduction, and gives no hints as to how this is to be achieved.
 
 A compliant Go implementation of the Go spec _could_ store every allocation on the heap.
-That would put a lot of pressure on the the garbage collector, but it is in no way incorrect -- for several years, gccgo had very limited support for escape analysis so could effectively be considered to be operating in this mode. 
+That would put a lot of pressure on the the garbage collector, but it is in no way incorrect; for several years, gccgo had very limited support for escape analysis so could effectively be considered to be operating in this mode. 
 
-However, a goroutine's stack exists as a cheap place to store local variables; there is no need to garbage collect things on the stack. Therefore, where it is safe to do so, an allocation placed on the stack will be more efficient.
+However, a goroutine's stack exists as a cheap place to store local variables; there is no need to garbage collect things on the stack as they are effectively collected when the function returns.
+Therefore, where it is safe to do so, an allocation placed on the stack will be more efficient.
 
 In some languages, for example C and C++, the choice of allocating on the stack or on the heap is a manual exercise for the programmer--heap allocations are made with `malloc` and `free`, stack allocation is via `alloca`.
 Mistakes using these mechanisms are a common cause of memory corruption bugs.

@@ -225,7 +225,9 @@ On the graph the box that consumes the _most_ CPU time is the largest -- we see 
 The string of boxes leading to `syscall.Syscall` represent the immediate callers -- there can be more than one if multiple code paths converge on the same function.
 The size of the arrow represents how much time was spent in children of a box, we see that from `main.readbyte` onwards they account for near 0 of the 1.41 second spent in this arm of the graph.
 
+====
 _Question_: Can anyone guess why our version is so much slower than `wc`?
+====
 
 === Improving our version
 
@@ -356,11 +358,3 @@ We won't cover these tools in this workshop, but you can read and watch a presen
 % cd $GOPATH/src/golang.org/x/tools/cmd/godoc
 % vim main.go
 - If you were to generate a profile on one machine and inspect it on another, how would you do it?
-
-////
-=== What's coming up in Go 1.13?
-
-Benchmarking time getting more accurate in 1.13
-
-https://go-review.googlesource.com/c/go/+/112155
-////

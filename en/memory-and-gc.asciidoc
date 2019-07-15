@@ -35,9 +35,34 @@ The design of the Go GC has changed over the years
 - Go 1.10+, https://github.com/golang/proposal/blob/master/design/24543-non-cooperative-preemption.md[move away from pure cooprerative goroutine scheduling] to lower the latency when triggering a full GC cycle.
 - Go 1.13 Scavenger rewritten
 
-TODO: describe scavenger
+=== Garbage collector tuning
 
-== Garbage collector monitoring
+The Go runtime provides one environment variable to tune the GC, `GOGC`.
+
+The formula for GOGC is
+
+stem:[goal = reachabl\e * (1 + (GOGC)/100)]
+
+For example, if we currently have a 256MB heap, and `GOGC=100` (the default), when the heap fills up it will grow to
+
+stem:[512MB = 256MB * (1 + 100/100)]
+
+- Values of `GOGC` greater than 100 causes the heap to grow faster, reducing the pressure on the GC.
+- Values of `GOGC` less than 100 cause the heap to grow slowly, increasing the pressure on the GC.
+
+The default value of 100 is _just_a_guide_. you should choose your own value _after profiling your application with production loads_.
+
+=== VSS and the scavenger
+
+#TODO: describe scavenger#
+
+talk about scavenger
+talk about changes in go 1.13
+talk about effect on VSS vs RSS
+talk about the heap being non contigioius now
+talk about reading memstats not top for the _real_ information.
+
+=== Garbage collector monitoring
 
 A simple way to obtain a general idea of how hard the garbage collector is working is to enable the output of GC logging.
 
@@ -81,43 +106,18 @@ Be careful as this will be visible if you use `http.ListenAndServe(address, nil)
 
 DEMO: `godoc -http=:8080`, show `/debug/pprof`.
 
-=== Garbage collector tuning
+== Minimise allocations
 
-The Go runtime provides one environment variable to tune the GC, `GOGC`.
+Memory allocation is not free, this is true reguardless of if your language is garbage collected or not.
 
-The formula for GOGC is
+Memory allocation can be an overhead spread throughout your codebase; each represents a tiny fraction of the total runtime, but collectively they represent a sizeable cost.
+Because that cost is spread across many places, identifying the biggest offenders can be complicated and often requires reworking APIs.
 
-stem:[goal = reachabl\e * (1 + (GOGC)/100)]
+Each allocation should pay its way.
+Analogy: if you move to a larger house because you're planning on having a family, that's a good use of your capital.
+If you move to a larger house because someone asked you to mind their child for an afternoon, that's a poor use of your capital.
 
-For example, if we currently have a 256MB heap, and `GOGC=100` (the default), when the heap fills up it will grow to
-
-stem:[512MB = 256MB * (1 + 100/100)]
-
-- Values of `GOGC` greater than 100 causes the heap to grow faster, reducing the pressure on the GC.
-- Values of `GOGC` less than 100 cause the heap to grow slowly, increasing the pressure on the GC.
-
-The default value of 100 is _just_a_guide_. you should choose your own value _after profiling your application with production loads_.
-
-== Reducing allocations
-
-Make sure your APIs allow the caller to reduce the amount of garbage generated.
-
-Consider these two Read methods
-
-[source,go]
-func (r *Reader) Read() ([]byte, error)
-func (r *Reader) Read(buf []byte) (int, error)
-
-The first Read method takes no arguments and returns some data as a `[]byte`.
-The second takes a `[]byte` buffer and returns the amount of bytes read.
-
-The first Read method will _always_ allocate a buffer, putting pressure on the GC. The second fills the buffer it was given.
-
-====
-Can you name examples in the std lib which follow this pattern?
-====
-
-== ++strings++ and ++[]byte++s
+=== ``string``s vs ``[]byte``s
 
 In Go `string` values are immutable, `[]byte` are mutable.
 
@@ -130,9 +130,10 @@ The https://golang.org/pkg/bytes/[`bytes`] package contains many of the same ope
 
 Under the hood `strings` uses same assembly primitives as the `bytes` package.
 
-== Using `[]byte` as a map key
+=== Using ``[]byte`` as a map key
 
 It is very common to use a `string` as a map key, but often you have a `[]byte`.
+Alterntative you may have a key in `[]byte` form, but slices do not have a defined equality operator so cannot be used as map keys.
 
 The compiler implements a specific optimisation for this case
 
@@ -150,7 +151,22 @@ val, ok := m[key]
 Let's see if this is still true. Write a benchmark comparing these two methods of using a `[]byte` as a `string` map key.
 ====
 
-== Avoid string concatenation
+=== `[]byte` to `string` conversions
+
+TIP: New in Go 1.13
+
+Just like `[]byte` to `string` conversions are necessary for map keys, comparing two `[]byte` slices for equality either requires a conversion -- potentially a copy -- to a `string`, or the use of the `bytes.Equal` function.
+
+The good news is in 1.13 the compiler has improved to the point that `[]byte` to `string` conversions for the purpose of equality testing avoids the allocation.
+
+[source,go,options=nowrap]
+include::../examples/byteseq/bytes_test.go[tags=bench]
+
+However, just like the map example above, the copy is only elided in simple cases.
+
+Further reading: https://go-review.googlesource.com/c/go/+/173323
+
+=== Avoid string concatenation
 
 Go strings are immutable. Concatenating two strings generates a third. Which of the following is fastest? 
 
@@ -171,22 +187,26 @@ include::../examples/concat/concat_test.go[tags=five]
 
 DEMO: `go test -bench=. ./examples/concat`
 
-=== `[]byte` to `string` conversions
+=== Don't force allocations on the callers of your API
 
-TIP: New in Go 1.13
+Make sure your APIs allow the caller to reduce the amount of garbage generated.
 
-Just like `[]byte` to `string` conversions are necessary for map keys, comparing two `[]byte` slices for equality either requires a conversion -- potentially a copy -- to a `string`, or the use of the `bytes.Equal` function.
+Consider these two Read methods
 
-The good news is in 1.13 the compiler has improved to the point that `[]byte` to `string` conversions for the purpose of equality testing avoids the allocation.
+[source,go]
+func (r *Reader) Read() ([]byte, error)
+func (r *Reader) Read(buf []byte) (int, error)
 
-[source,go,options=nowrap]
-include::../examples/byteseq/bytes_test.go[tags=bench]
+The first Read method takes no arguments and returns some data as a `[]byte`.
+The second takes a `[]byte` buffer and returns the amount of bytes read.
 
-However, just like the map example above, the copy is only elided in simple cases.
+The first Read method will _always_ allocate a buffer, putting pressure on the GC. The second fills the buffer it was given.
 
-Further reading: https://go-review.googlesource.com/c/go/+/173323
+====
+Can you name examples in the std lib which follow this pattern?
+====
 
-== Preallocate slices if the length is known
+=== Preallocate slices if the length is known
 
 Append is convenient, but wasteful.
 
@@ -224,6 +244,8 @@ return s
 
 == Using sync.Pool
 
+WARNING: `sync.Pool` is not a cache. It can and will be emptied _at_any_time_. Do not place important items in a `sync.Pool`, they will be discarded.
+
 The `sync` package comes with a `sync.Pool` type which is used to reuse common objects.
 
 `sync.Pool` has no fixed size or maximum capacity.
@@ -238,14 +260,8 @@ This is https://groups.google.com/forum/#!searchin/golang-dev/gc-aware/golang-de
 include::../examples/pool/pool.go[tags=pool]
 ----
 
-[WARNING]
-====
-`sync.Pool` is not a cache. It can and will be emptied _at_any_time_.
-
-Do not place important items in a `sync.Pool`, they will be discarded.
-====
-
 [TIP]
+.New in Go 1.13
 ====
 The design of sync.Pool emptying itself on each GC may change in Go 1.13 which will help improve its utility.
 

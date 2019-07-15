@@ -81,8 +81,6 @@ include::tips-and-tricks.asciidoc[]
 [#conclusion]
 == Final Questions and Conclusion
 
-TODO: cleanup
-
 Don't do it
 Do it, but don't do it again
 Do it less
@@ -95,23 +93,31 @@ http://www.brendangregg.com/methodology.html
 
 https://twitter.com/CompSciFact/status/1136738317083561984
 
-## Is it better to write clear code, or high Performance code?
+
+
+=== Is it better to write clear code, or high performance code?
 
 I’ve given this workshop in many countries and without exception the first question I get is?
 
-> Is it better to write clear code, or high Performance code. 
+_What is more important, readable code or high performance code?_
 
-My retort is; is the better to marry for love, or money?
+My retort is; 
+
+_What is more important, love or money?_
 
 I need to dissuade you of the necessity for writing the highest performance code, certainly if that comes at a cost to clarity, readability, or maintainablity. 
 
-> Readable means reliable -- Rob Pike
+"Readable means reliable."
+-- Rob Pike
 
 Start with the simplest possible code.
 
 _Measure_. Profile your code to identify the bottlenecks, _do not guess_.
 
 If performance is good, _stop_. You don't need to optimise everything, only the hottest parts of your code.
+
+"The fastest algorithm can frequently be replaced by one that is almost as fast and much easier to understand."
+-- Douglas W. Jones
 
 As your application grows, or your traffic pattern evolves, the performance hot spots will change.
 
@@ -125,7 +131,8 @@ Shorter code is _smaller_ code; which is important for the CPU's cache.
 
 Pay very close attention to allocations, avoid unnecessary allocation where possible.
 
-> I can make things very fast if they don't have to be correct. -- Russ Cox
+"I can make things very fast if they don't have to be correct."
+-- Russ Cox
 
 Performance and reliability are equally important.
 

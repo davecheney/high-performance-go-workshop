@@ -194,6 +194,7 @@ TIP: Old version of Go receive no updates. *Do not use them*. Use the latest and
 
 === Move hot fields to the top of the struct
 
+# TODO: fill in or drop #
 
 == Discussion
 
