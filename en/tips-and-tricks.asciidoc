@@ -99,7 +99,7 @@ defer func() {
         mu.Unlock()
 }()
 
-// TODO  talk about unwinding costs
+#TODO: talk about unwinding costs#
 
 `defer` is expensive if the work being done is small, the classic example is `defer` ing a mutex unlock around a struct variable or map lookup.
 You may choose to avoid `defer` in those situations.
@@ -110,7 +110,7 @@ Always revisit these decisions.
 
 NEW IN 1.13
 
-TODO: _most_ defers are allocated on the stack
+#TODO: _most_ defers are allocated on the stack#
 
 https://go-review.googlesource.com/c/go/+/171758
 
@@ -130,7 +130,13 @@ A finaliser may not run for a long time if you have a large heap and have tuned 
 
 == Make the fast path inlinable
 
-# TODO: find example from Carlo#
+[TIP]
+====
+Mid stack inlining can be used to inline the fast path of a function, eliminating the function call overhead in the fast path. 
+https://go-review.googlesource.com/c/go/+/152698[This recent CL which landed in for Go 1.13] shows this technique applied to `sync.RWMutex.Unlock()`.
+====
+
+#TODO: find example from Carlo#
 
 https://go-review.googlesource.com/c/go/+/148959
 
@@ -138,7 +144,7 @@ Inl, split function if over budget or not eligible
 
 == Faster timers
 
-# TODO: summarise #
+#TODO: summarise#
 
 Not yet landed.
 
@@ -194,7 +200,7 @@ TIP: Old version of Go receive no updates. *Do not use them*. Use the latest and
 
 === Move hot fields to the top of the struct
 
-# TODO: fill in or drop #
+#TODO: fill in or drop#
 
 == Discussion
 

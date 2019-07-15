@@ -81,19 +81,14 @@ include::tips-and-tricks.asciidoc[]
 [#conclusion]
 == Final Questions and Conclusion
 
-Don't do it
-Do it, but don't do it again
-Do it less
-Do it later
-Do it when they're not looking
-Do it concurrently
-Do it cheaper
-
-http://www.brendangregg.com/methodology.html
-
-https://twitter.com/CompSciFact/status/1136738317083561984
-
-
+"Don't do it. +
+Do it, but don't do it again. +
+Do it less. +
+Do it later. +
+Do it when they're not looking. +
+Do it concurrently. +
+Do it cheaper."
+-- http://www.brendangregg.com/methodology.html[Brendan Gregg]
 
 === Is it better to write clear code, or high performance code?
 

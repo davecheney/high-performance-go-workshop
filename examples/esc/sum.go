@@ -4,8 +4,7 @@ import "fmt"
 
 // Sum returns the sum of the numbers 1 to 100 tag::sum[]
 func Sum() int {
-	const count = 100
-	numbers := make([]int, count)
+	numbers := make([]int, 100)
 	for i := range numbers {
 		numbers[i] = i + 1
 	}

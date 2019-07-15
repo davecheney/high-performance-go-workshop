@@ -73,8 +73,11 @@ Block profiling is a very specialised tool, it should not be used until you beli
 
 Mutex profiling is simlar to Block profiling, but is focused exclusively on operations that lead to delays caused by mutex contention.
 
-I don't have a lot of experience with this type of profile but I have built an example to demonstrate it.
-We'll look at that example shortly.
+The mutex profile does not show you how long the program ran for, or even what took the most time.
+Instead it reports how much time was spent waiting for locks.
+Just like blocking profile, it says how much time was spent waiting for a resource.
+
+Said another way, the mutex profile reports how much time could be saved if the lock contention was removed.
 
 == One profile at at time
 
@@ -328,13 +331,17 @@ The last profile type we'll look at is block profiling. We'll use the `ClientSer
 
 image::../images/block-profile.svg[{svg-inline}]
 
-=== Thread creation profiling
+=== Mutex profiling
 
-Go 1.11 (?) added support for profiling the creation of operating system threads.
-
-====
-Add thread creation profiling to `godoc` and observe the results of profiling `godoc -http=:8080 -index`.
-====
+Mutex contention increases with the number of goroutines.
+[source,go,options="nowrap"]
+----
+include::../examples/mutex/mutex_test.go[tags=mutex]
+----
+Try running this on your machine.
+----
+% go test -bench=. -cpu=1,2,4,8,16 ./examples/mutex
+----
 
 === Framepointers
 

@@ -11,7 +11,7 @@ STYLESHEET = $(DOCBOOK)/xhtml5/chunk.xsl
 ICONS = $(DOCBOOK)/images
 IMAGES = $(SITE)/images
 DIRS = $(SITE) $(IMAGES) $(SITE)/$(LANG) $(OUTPUT)
-GIT_VERSION := $(shell git describe --abbrev=6 --dirty --always)
+GIT_VERSION := $(shell git describe --abbrev=6 --dirty --contains --always)
 GIT_DATE := $(shell git log -1 --format=%cd)
 
 site: $(SITE)/$(TITLE).html $(IMAGES)/image-20180818145606919.png $(IMAGES)/jalopnik.png $(IMAGES)/cpu-performance.png $(IMAGES)/int_graph.png $(IMAGES)/stuttering.png $(IMAGES)/mandelbrot.png $(IMAGES)/cmos-inverter.png $(IMAGES)/power-density.png $(IMAGES)/gate-length.png $(IMAGES)/highrescpudies_fullyc_020-1105.png $(IMAGES)/mandelbrot.png $(IMAGES)/profile001.svg

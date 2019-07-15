@@ -271,7 +271,9 @@ moved to the victim cache. As a result, in steady-state, there are
 (roughly) no new allocations, but if Pool usage drops, objects will
 still be collected within two GCs (as opposed to one). -- Austin Clements
 
-https://go-review.googlesource.com/c/go/+/166961/
+Further reading:
+- https://go-review.googlesource.com/c/go/+/166961/
+- https://github.com/golang/go/issues/22331
 ====
 
 == Exercises
