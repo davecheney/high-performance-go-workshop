@@ -145,6 +145,8 @@ It is costing intel, TSMC, AMD, and Samsung billions of dollars because they hav
 Even the term gate length, measured in nano meters, has become ambiguous.
 Various manufacturers measure the size of their transistors in different ways allowing them to demonstrate a smaller number than their competitors without perhaps delivering.
 This is the Non-GAAP Earning reporting model of CPU manufacturers.
+
+Further reading: https://en.wikichip.org/wiki/technology_node
 ====
 
 == More cores

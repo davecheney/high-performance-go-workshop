@@ -54,13 +54,35 @@ The default value of 100 is _just_a_guide_. you should choose your own value _af
 
 === VSS and the scavenger
 
-#TODO: describe scavenger#
+Many applications operate through distict phases; setup, steady-state, and (optionally) shutdown.
+The phases have different memory profiles.
+Setup may process or summarise a large amounts of data.
+Steady-state may consume memory proportional to connected clients or request rate.
+Shutdown may consume memory proportional to the amount of data process during steady state to summarise or pasivate data to disk.
 
+In practical terms your application may use more memory on startup than during the rest of it's life, then its heap will be larger than necessary, but mostly unused.
+It would be useful if the Go runtime could tell the operating system which parts of the, mostly unoccupied, heap are not needed.
+
+[TIP]
+.New in Go 1.13
+====
+The scavenger has remained mostly unchanged since it was first implemented in Go 1.1.
+In Go 1.13 scavenging moves from a periodic background operation to something demand driven, thus processes which do not benefit from scavenging do not pay for it where as long running programs where memory allocation varys widely _should_ return memory to the operating system more effectively.
+
+_However_, some of the CLs related to scavenging have not been committed.
+It is possible that this work will not be completed until Go 1.14.
+
+Further reading
+- https://github.com/golang/go/issues/30333[Issue #30333]
+- https://github.com/golang/proposal/blob/master/design/30333-smarter-scavenging.md[Smarter scavenging design document].
+====
+////
 talk about scavenger
 talk about changes in go 1.13
 talk about effect on VSS vs RSS
 talk about the heap being non contigioius now
 talk about reading memstats not top for the _real_ information.
+////
 
 === Garbage collector monitoring
 

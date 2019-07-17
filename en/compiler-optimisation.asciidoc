@@ -272,6 +272,11 @@ Experiment with the output of What happens if `a` and `b` are declared as  are v
 
 NOTE: `-gcflags=-S` doesn't prevent the final binary being build in your working directory. If you find that subsequent runs of `go build ...` produce no output, delete the `./max` binary in your working directory.
 
+====
+In the example at the start of the day, no care was taken to prevent the optimisation that broke the `popcnt` benchmark from affecting `Fib20`.
+Why was that?
+====
+
 === Adjusting the level of inlining
 
 Adjusting the _inlining level_ is performed with the `-gcflags=-l` flag. Somewhat confusingly passing a single `-l` will disable inlining, and two or more will enable inlining at more aggressive settings.
@@ -536,7 +541,7 @@ Does rearranging the order in which we assign the `A` through `I` affect the ass
 - What happens if `v` is moved inside the `Benchmark` function?
 - What happens if `v` was declared as an array, `var v [9]int`?
 
-== Compiler flags Exercises
+== Compiler flags exercises
 
 Compiler flags are provided with:
 

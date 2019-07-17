@@ -87,7 +87,7 @@ You need to set a timeout on every network request you make with `SetDeadline`, 
 
 == Defer is expensive, or is it?
 
-`defer` is expensive because it has to record a closure for defer's arguments.
+Historically `defer` is expensive because it has to record a closure for defer's arguments.
 
 [source,go]
 defer mu.Unlock()
@@ -99,22 +99,36 @@ defer func() {
         mu.Unlock()
 }()
 
-#TODO: talk about unwinding costs#
-
 `defer` is expensive if the work being done is small, the classic example is `defer` ing a mutex unlock around a struct variable or map lookup.
-You may choose to avoid `defer` in those situations.
+
+[TIP]
+.New in Go 1.13
+====
+In Go 1.13 `defer` records are optimisitically stack allocated.
+This doesn't remove the overhead of ``defer``'s closure, but it does remove the overhead of the heap allocation of the closure.
+
+Reference: https://go-review.googlesource.com/c/go/+/171758
+====
+
+====
+_Exercise_: experiment with the `example/mutex` example, ``defer``ing `mu.Unlock` and observing the cost. If you have Go 1.12 installed, compare the performance of defer.
+====
 
 This is a case where readability and maintenance is sacrificed for a performance win. 
-
+You may choose to avoid `defer` in those situations.
 Always revisit these decisions.
 
-NEW IN 1.13
+== Make the fast path inlinable
 
-#TODO: _most_ defers are allocated on the stack#
+[TIP]
+====
+Mid stack inlining can be used to inline the fast path of a function, eliminating the function call overhead in the fast path. 
+====
 
-https://go-review.googlesource.com/c/go/+/171758
+The size of a function, it's _complexity_, affects the ability of the compiler to inline it.
+Mid stack inlining can be used to exploit this to make the fast path of a function inlinable.
 
-Need an example
+Example: https://go-review.googlesource.com/c/go/+/148959/14/src/sync/mutex.go
 
 == Avoid Finalisers
 
@@ -128,20 +142,7 @@ Finalisers run as part of the gc cycle, which means it is unpredictable when the
 
 A finaliser may not run for a long time if you have a large heap and have tuned your appliation to create minimal garbage.
 
-== Make the fast path inlinable
-
-[TIP]
-====
-Mid stack inlining can be used to inline the fast path of a function, eliminating the function call overhead in the fast path. 
-https://go-review.googlesource.com/c/go/+/152698[This recent CL which landed in for Go 1.13] shows this technique applied to `sync.RWMutex.Unlock()`.
-====
-
-#TODO: find example from Carlo#
-
-https://go-review.googlesource.com/c/go/+/148959
-
-Inl, split function if over budget or not eligible 
-
+////
 == Faster timers
 
 #TODO: summarise#
@@ -151,6 +152,7 @@ Not yet landed.
 https://twitter.com/odeke_et/status/1147359570416689152
 
 https://go-review.googlesource.com/c/go/+/171883/
+////
 
 == Minimise cgo
 
