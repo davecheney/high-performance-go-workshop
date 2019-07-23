@@ -10,13 +10,9 @@ import (
 	"log"
 	"os"
 	"sync"
-
-	"github.com/pkg/profile"
 )
 
 func main() {
-	defer profile.Start(profile.TraceProfile).Stop()
-
 	var (
 		height  = flag.Int("h", 1024, "height of the output image in pixels")
 		width   = flag.Int("w", 1024, "width of the output image in pixels")
@@ -113,22 +109,22 @@ func onePerRowFillImg(m *img) {
 }
 
 func nWorkersFillImg(m *img, workers int) {
-	c := make(chan struct{ i, j int }, 1024*1024)
+	c := make(chan int, m.h)
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	for i := 0; i < workers; i++ {
 		go func() {
-			for t := range c {
-				fillPixel(m, t.i, t.j)
+			for row := range c {
+				for col := range m.m[row] {
+					fillPixel(m, row, col)
+				}
 			}
 			wg.Done()
 		}()
 	}
 
-	for i, row := range m.m {
-		for j := range row {
-			c <- struct{ i, j int }{i, j}
-		}
+	for row := range m.m {
+		c <- row
 	}
 	close(c)
 	wg.Wait()
