@@ -277,26 +277,6 @@ In the example at the start of the day, no care was taken to prevent the optimis
 Why was that?
 ====
 
-=== Adjusting the level of inlining
-
-Adjusting the _inlining level_ is performed with the `-gcflags=-l` flag. Somewhat confusingly passing a single `-l` will disable inlining, and two or more will enable inlining at more aggressive settings.
-
-- `-gcflags=-l`, inlining disabled.
-- nothing, regular inlining.
-- `-gcflags='-l -l'` inlining level 2, more aggressive, might be faster, may make bigger binaries.
-- `-gcflags='-l -l -l'` inlining level 3, more aggressive again, binaries definitely bigger, maybe faster again, but might also be buggy.
-- `-gcflags=-l=4` (four `-l`s) in Go 1.11 will enable the experimental https://github.com/golang/go/issues/19348#issuecomment-393654429[_mid stack_ inlining optimisation]. I believe as of Go 1.12 it has no effect.
-
-=== Mid Stack inlining
-
-Since Go 1.12 so called _mid stack_ inlining has been enabled (it was previously available in preview in Go 1.11 with the `-gcflags='-l -l -l -l'` flag).
-
-We can see an example of mid stack inlining in the previous example. In Go 1.11 and earlier `F` would not have been a leaf function -- it called `max`.
-However because of inlining improvements `F` is now inlined into its caller.
-This is for two reasons;
-. When `max` is inlined into `F`, `F` contains no other function calls thus it becomes a potential _leaf function_, assuming its complexity budget has not been exceeded.
-. Because `F` is a simple function--inlining and dead code elimination has eliminated much of its complexity budget--it is eligable for _mid stack_ inlining irrispective of calling `max`.
-
 == Dead code elimination
 
 Why is it important that `a` and `b` are constants?
@@ -368,6 +348,26 @@ You can take advantage of this to implement expensive debugging, and hide it beh
 const debug = false 
 
 Combined with build tags this can be very useful.
+
+=== Adjusting the level of inlining
+
+Adjusting the _inlining level_ is performed with the `-gcflags=-l` flag. Somewhat confusingly passing a single `-l` will disable inlining, and two or more will enable inlining at more aggressive settings.
+
+- `-gcflags=-l`, inlining disabled.
+- nothing, regular inlining.
+- `-gcflags='-l -l'` inlining level 2, more aggressive, might be faster, may make bigger binaries.
+- `-gcflags='-l -l -l'` inlining level 3, more aggressive again, binaries definitely bigger, maybe faster again, but might also be buggy.
+- `-gcflags=-l=4` (four `-l`s) in Go 1.11 will enable the experimental https://github.com/golang/go/issues/19348#issuecomment-393654429[_mid stack_ inlining optimisation]. I believe as of Go 1.12 it has no effect.
+
+=== Mid Stack inlining
+
+Since Go 1.12 so called _mid stack_ inlining has been enabled (it was previously available in preview in Go 1.11 with the `-gcflags='-l -l -l -l'` flag).
+
+We can see an example of mid stack inlining in the previous example. In Go 1.11 and earlier `F` would not have been a leaf function -- it called `max`.
+However because of inlining improvements `F` is now inlined into its caller.
+This is for two reasons;
+. When `max` is inlined into `F`, `F` contains no other function calls thus it becomes a potential _leaf function_, assuming its complexity budget has not been exceeded.
+. Because `F` is a simple function--inlining and dead code elimination has eliminated much of its complexity budget--it is eligable for _mid stack_ inlining irrispective of calling `max`.
 
 === Further reading
 

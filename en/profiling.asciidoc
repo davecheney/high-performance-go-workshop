@@ -287,7 +287,7 @@ We'll talk about why this is happening in more detail in the next section, but f
 What are some ways we can avoid this? Try them and use CPU and memory profiling to prove it.
 ====
 
-==== Alloc objects vs. inuse objects
+=== Alloc objects vs. inuse objects
 
 Memory profiles come in two varieties, named after their `go tool pprof` flags
 
@@ -359,9 +359,26 @@ We won't cover these tools in this workshop, but you can read and watch a presen
 
 === Exercise
 
+`b.StopTimer` / `b.StartTimer` are surprisingly expensive.
+Use the profiling flags built into `go test` to profile the cost of `b.StopTimer`.
+
+```
+% go test -bench=. -benchtime=100000x -cpuprofile=c.p./examples/benchstartstop/ 
+```
+
+====
+_Question_: is `b.ResetTimer` also expensive? Does that matter?
+====
+
 - Generate a profile from a piece of code you know well. If you don't have a code sample, try profiling `godoc`.
 [source]
 % go get golang.org/x/tools/cmd/godoc
 % cd $GOPATH/src/golang.org/x/tools/cmd/godoc
 % vim main.go
 - If you were to generate a profile on one machine and inspect it on another, how would you do it?
+
+== Discussion
+
+"There are only three optimizations: Do less. Do it less often. Do it faster. +
+The largest gains come from 1, but we spend all our time on 3."
+-- https://twitter.com/creachadair/status/1039602865831010305[Michael Fromberger]

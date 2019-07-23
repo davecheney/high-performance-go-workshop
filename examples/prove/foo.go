@@ -1,6 +1,6 @@
 package main
 
-func foo(x int) bool {
+func foo(x int32) bool {
 	if x > 5 { // <1>
 		if x > 3 { // <2>
 			return true

@@ -40,9 +40,9 @@ Here's the (approximate) schedule for the day.
 | Start
 | Description
 
-| 09:00 | <<welcome>> and <<introduction,Introduction>>
-| 09:30 | <<benchmarking>>
-| 10:45	| Break (15 minutes)
+| 09:00 | <<welcome>>
+| 09:15 | <<benchmarking>>
+| 10:30	| Break (20 minutes)
 | 11:00	| <<profiling>>
 | 12:00	| Lunch (90 minutes)
 | 13:30	| <<compiler-optimisation>>
@@ -60,8 +60,6 @@ Here's the (approximate) schedule for the day.
 include::welcome.asciidoc[]
 
 :numbered:
-
-include::microprocessor-performance.asciidoc[]
 
 include::benchmarking.asciidoc[]
 
@@ -92,6 +90,7 @@ Do it cheaper."
 
 === Is it better to write clear code, or high performance code?
 
+////
 I’ve given this workshop in many countries and without exception the first question I get is?
 
 _What is more important, readable code or high performance code?_
@@ -99,6 +98,7 @@ _What is more important, readable code or high performance code?_
 My retort is; 
 
 _What is more important, love or money?_
+////
 
 I need to dissuade you of the necessity for writing the highest performance code, certainly if that comes at a cost to clarity, readability, or maintainablity. 
 

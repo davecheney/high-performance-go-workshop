@@ -170,7 +170,8 @@ key := string(bytes)
 val, ok := m[key] 
 
 ====
-Let's see if this is still true. Write a benchmark comparing these two methods of using a `[]byte` as a `string` map key.
+Let's see if this is still true.
+Write a benchmark comparing these two methods of using a `[]byte` as a `string` map key.
 ====
 
 === `[]byte` to `string` conversions
@@ -182,8 +183,9 @@ Just like `[]byte` to `string` conversions are necessary for map keys, comparing
 The good news is in 1.13 the compiler has improved to the point that `[]byte` to `string` conversions for the purpose of equality testing avoids the allocation.
 
 [source,go,options=nowrap]
+----
 include::../examples/byteseq/bytes_test.go[tags=bench]
-
+----
 However, just like the map example above, the copy is only elided in simple cases.
 
 Further reading: https://go-review.googlesource.com/c/go/+/173323
@@ -297,6 +299,45 @@ Further reading:
 - https://go-review.googlesource.com/c/go/+/166961/
 - https://github.com/golang/go/issues/22331
 ====
+
+== Rearrange fields for better packing
+
+Consider this struct declaration
+[source,go,options=nowrap]
+----
+include::../examples/fields/fields.go[tags=struct]
+----
+How many bytes of memory does a value of this type consume?
+[source,go,option=nowrap]
+----
+include::../examples/fields/fields.go[tags=sizeof]
+----
+<1> 24 bytes on 64-bit platforms, 16 on 32-bit platforms.
+
+Why is this? The answer has to do with padding and alignment.
+
+Values of type `float64` are 8 bytes wide on all platforms, so they must always be located at an address that is a multiple of 8.
+This is known as _natural alignment_, as the CPU naturally expects fields which are 4 bytes long to be alligned on 4 byte boundaries, 8 byte values on 8 byte boundaries, and so on.
+This is because some platforms, notably _not_ Intel, do not let you operate on values that are not properly aligned.
+Even on platforms that do support so called _unaligned access_, there is usually a cost to access these fields.
+
+WARNING: Even on platforms that allow unaligned access, `sync/atomic` requires the values be naturally aligned. This is because atomic operations are implemented in the various L1, L2, L3 caching layers, which always work in amounts known as cache lines (normally 32-64 bytes wide). Atomic access cannot span cache lines, so they must be correctly aligned. This is the infamous https://golang.org/issue/599[issue 599].
+
+Knowing how alignment works, we can infer how the compiler is going to lay out these fields in memory:
+[source,go,option=nowrap]
+----
+include::../examples/fields/fields.go[tags=padding]
+----
+<1> 7 bytes of padding is required to ensure `b float64` starts on an 8 byte boundary.
+<2> 4 bytes of padding are required to ensure that arrays (or slices) of ``S``'s are correctly aligned in memory.
+ 
+http://golang-sizeof.tips/?t=Ly8gU2FtcGxlIGNvZGUKc3RydWN0IHsKCWEgYm9vbAoJYiBmbG9hdDY0CgljIGludDMyCn0K[There's even a web service for this!]
+
+====
+_Exercise_: rearrange the fields in `S` to reduce its overall size.
+====
+
+Further reading: https://dave.cheney.net/2015/10/09/padding-is-hard[Padding is hard]
 
 == Exercises
 

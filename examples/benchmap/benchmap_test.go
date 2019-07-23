@@ -33,6 +33,7 @@ var sink string
 func BenchmarkMapLookup(b *testing.B) {
 	var key = []byte{'F', 'r', 'a', 'n', 'c', 'e'}
 	var r string
+	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
 		r = capitals[string(key)]
 	}
@@ -42,6 +43,7 @@ func BenchmarkMapLookup(b *testing.B) {
 func BenchmarkMapLookup2(b *testing.B) {
 	var key = []byte{'F', 'r', 'a', 'n', 'c', 'e'}
 	var r string
+	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
 		k := string(key)
 		r = capitals[k]

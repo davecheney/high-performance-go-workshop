@@ -9,7 +9,7 @@ func Max(a, b int) int {
 }
 
 func F() {
-	const a, b = 100, 20
+	var a, b = 100, 20
 	if Max(a, b) == b {
 		panic(b)
 	}
