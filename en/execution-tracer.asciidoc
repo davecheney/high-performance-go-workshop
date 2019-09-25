@@ -201,7 +201,7 @@ Just like pprof, there is a tool in the `go` command to analyse the trace.
 2017/09/17 12:41:40 Splitting trace...
 2017/09/17 12:41:40 Opening browser. Trace viewer s listening on http://127.0.0.1:57842
 
-This tool is a little bit different to `go tool pprof`. The execution tracer is reusing a lot of the profile visualisation infrastructure built into Chrome, so `go tool trace` acts as a server to translate the raw execution trace into data which Chome can display natively.
+This tool is a little bit different to `go tool pprof`. The execution tracer is reusing a lot of the profile visualisation infrastructure built into Chrome, so `go tool trace` acts as a server to translate the raw execution trace into data which Chrome can display natively.
 
 === Analysing the trace
 
