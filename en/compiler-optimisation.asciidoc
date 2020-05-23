@@ -389,7 +389,7 @@ include::../examples/prove/foo.go[]
 
 === Prove it (ha!)
 
-Just as with inining and escape analysis we can ask the compiler to show us the working of the prove pass.
+Just as with inlining and escape analysis we can ask the compiler to show us the working of the prove pass.
 We do this with the `-d` flag passed to `go tool compile` via `-gcflags`
 
 [source,bash]
