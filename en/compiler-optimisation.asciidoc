@@ -576,4 +576,3 @@ https://go-review.googlesource.com/c/go/+/151177
 === Map elision
 
 === Shift ordering elision
-////
